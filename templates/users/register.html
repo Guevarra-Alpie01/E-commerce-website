@@ -1,36 +1,46 @@
 {% extends "base.html" %}
 
-{% block title %}Register | Django Store{% endblock %}
+{% block title %}Register | {{ site_name }}{% endblock %}
 
 {% block content %}
-<section class="auth-shell">
-    <div class="card form-card">
-        <div class="section-heading">
-            <p class="eyebrow">New customer</p>
-            <h1>Create your account</h1>
-            <p>Register once, then you can place orders, track deliveries, and leave product reviews.</p>
-        </div>
-        <form method="post" class="stack-form">
-            {% csrf_token %}
-            {% for field in form %}
-                <div class="field-group">
-                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                    {{ field }}
-                    {% if field.help_text %}
-                        <small class="help-text">{{ field.help_text }}</small>
-                    {% endif %}
-                    {% for error in field.errors %}
-                        <p class="field-error">{{ error }}</p>
-                    {% endfor %}
+<div class="row justify-content-center">
+    <div class="col-xl-7">
+        <div class="card border-0 shadow-sm hero-gradient">
+            <div class="card-body p-4 p-lg-5">
+                <div class="row g-4 align-items-center">
+                    <div class="col-lg-5">
+                        <span class="badge text-bg-warning rounded-pill mb-3">Create account</span>
+                        <h1 class="display-6 fw-bold">Join {{ site_name }}</h1>
+                        <p class="text-secondary mb-0">Create an account to order, review, and track deliveries from our Bootstrap and React storefront.</p>
+                    </div>
+                    <div class="col-lg-7">
+                        <form method="post" class="row g-3">
+                            {% csrf_token %}
+                            {% for field in form %}
+                                <div class="col-md-6 {% if field.name == 'username' or field.name == 'email' or 'password' in field.name %}col-12{% endif %}">
+                                    <label class="form-label fw-semibold" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                    {{ field }}
+                                    {% if field.help_text %}
+                                        <div class="form-text">{{ field.help_text|safe }}</div>
+                                    {% endif %}
+                                    {% for error in field.errors %}
+                                        <div class="text-danger small mt-1">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            {% endfor %}
+                            {% for error in form.non_field_errors %}
+                                <div class="col-12">
+                                    <div class="alert alert-danger mb-0">{{ error }}</div>
+                                </div>
+                            {% endfor %}
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-dark btn-lg">Create account</button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
-            {% endfor %}
-            {% if form.non_field_errors %}
-                {% for error in form.non_field_errors %}
-                    <p class="field-error">{{ error }}</p>
-                {% endfor %}
-            {% endif %}
-            <button type="submit" class="btn btn-primary btn-block">Create account</button>
-        </form>
+            </div>
+        </div>
     </div>
-</section>
+</div>
 {% endblock %}

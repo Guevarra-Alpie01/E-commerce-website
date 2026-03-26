@@ -1,0 +1,84 @@
+body {
+  background:
+    radial-gradient(circle at top left, rgba(255, 193, 7, 0.24), transparent 28%),
+    radial-gradient(circle at bottom right, rgba(220, 53, 69, 0.12), transparent 30%),
+    linear-gradient(180deg, #fff9f2 0%, #fff4ea 100%);
+  color: #2f241a;
+  min-height: 100vh;
+}
+
+.form-control:not(textarea),
+.form-select,
+input[type="text"]:not(.form-control),
+input[type="password"]:not(.form-control),
+input[type="email"]:not(.form-control),
+input[type="number"]:not(.form-control),
+textarea:not(.form-control),
+select:not(.form-select) {
+  border-radius: 0.75rem;
+}
+
+.site-shell {
+  min-height: 100vh;
+}
+
+.brand-script {
+  letter-spacing: 0.02em;
+}
+
+.brand-pill {
+  background: rgba(255, 193, 7, 0.18);
+  color: #8a5b00;
+}
+
+.navbar-brand {
+  font-weight: 700;
+}
+
+.hero-gradient,
+.lj-hero {
+  background:
+    linear-gradient(135deg, rgba(255, 193, 7, 0.15), rgba(255, 255, 255, 0.92)),
+    linear-gradient(135deg, rgba(220, 53, 69, 0.06), transparent);
+}
+
+.product-image {
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+}
+
+.product-image-placeholder {
+  background: linear-gradient(135deg, #ffe4b5, #f7c59f);
+  color: #7b5b40;
+}
+
+.product-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.product-card:hover {
+  transform: translateY(-4px);
+}
+
+.footer-blend {
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(8px);
+}
+
+.admin-hero {
+  background: linear-gradient(135deg, rgba(33, 37, 41, 0.96), rgba(88, 40, 13, 0.92));
+  color: #fff;
+}
+
+.admin-stat-card {
+  border-left: 4px solid #ffc107;
+}
+
+.storefront-shell .page-link {
+  color: #6f2d12;
+}
+
+.storefront-shell .page-item.active .page-link {
+  background-color: #6f2d12;
+  border-color: #6f2d12;
+}

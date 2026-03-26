@@ -1,75 +1,87 @@
 {% extends "base.html" %}
 
-{% block title %}Cart | Django Store{% endblock %}
+{% block title %}Cart | {{ site_name }}{% endblock %}
 
 {% block content %}
-<section class="page-hero">
-    <div>
-        <p class="eyebrow">Shopping cart</p>
-        <h1>Review your items</h1>
-        <p>Adjust quantities, remove products, and continue to checkout when everything looks right.</p>
+<section class="card border-0 shadow-sm hero-gradient mb-4">
+    <div class="card-body p-4 p-lg-5 d-flex flex-column flex-lg-row justify-content-between gap-3">
+        <div>
+            <span class="badge text-bg-warning rounded-pill mb-3">Shopping cart</span>
+            <h1 class="display-6 fw-bold mb-2">Your picks from {{ site_name }}</h1>
+            <p class="text-secondary mb-0">Update quantities, remove items, or move on to checkout.</p>
+        </div>
+        <div class="align-self-lg-center">
+            <a class="btn btn-outline-dark btn-lg rounded-pill" href="{% url 'products:product_list' %}">Continue shopping</a>
+        </div>
     </div>
-    <a class="btn btn-secondary" href="{% url 'products:product_list' %}">Continue shopping</a>
 </section>
 
 {% if cart_items %}
-    <section class="grid cart-layout">
-        <div class="card">
-            <div class="cart-table">
-                {% for item in cart_items %}
-                    <article class="cart-row">
-                        <div class="cart-product">
-                            {% if item.product.image %}
-                                <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}">
-                            {% else %}
-                                <div class="image-placeholder thumb">No image</div>
-                            {% endif %}
-                            <div>
-                                <h2><a href="{% url 'products:product_detail' item.product.slug %}">{{ item.product.name }}</a></h2>
-                                <p class="muted-copy">{{ item.product.category.name }}</p>
-                                <p class="price">PHP {{ item.price }}</p>
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <div class="vstack gap-3">
+                        {% for item in cart_items %}
+                            <div class="border rounded-4 p-3 d-flex flex-column flex-md-row justify-content-between gap-3">
+                                <div class="d-flex gap-3">
+                                    {% if item.product.image %}
+                                        <img src="{{ item.product.image.url }}" class="rounded-4" style="width: 96px; height: 96px; object-fit: cover;" alt="{{ item.product.name }}">
+                                    {% else %}
+                                        <div class="rounded-4 product-image-placeholder d-flex align-items-center justify-content-center" style="width: 96px; height: 96px;">No image</div>
+                                    {% endif %}
+                                    <div>
+                                        <h2 class="h5 mb-1"><a class="link-dark text-decoration-none" href="{% url 'products:product_detail' item.product.slug %}">{{ item.product.name }}</a></h2>
+                                        <div class="text-secondary mb-2">{{ item.product.category.name }}</div>
+                                        <strong class="text-danger">PHP {{ item.total_price }}</strong>
+                                    </div>
+                                </div>
+                                <div class="d-flex flex-column align-items-md-end gap-2">
+                                    <form action="{% url 'cart:cart_update' item.product.id %}" method="post" class="d-flex gap-2 align-items-center">
+                                        {% csrf_token %}
+                                        {{ item.update_form.quantity }}
+                                        {{ item.update_form.override }}
+                                        <button type="submit" class="btn btn-outline-dark">Update</button>
+                                    </form>
+                                    <form action="{% url 'cart:cart_remove' item.product.id %}" method="post">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-link text-danger text-decoration-none p-0">Remove</button>
+                                    </form>
+                                </div>
                             </div>
-                        </div>
-                        <div class="cart-controls">
-                            <form action="{% url 'cart:cart_update' item.product.id %}" method="post" class="qty-form">
-                                {% csrf_token %}
-                                {{ item.update_form.quantity }}
-                                {{ item.update_form.override }}
-                                <button type="submit" class="btn btn-secondary">Update</button>
-                            </form>
-                            <p class="price">PHP {{ item.total_price }}</p>
-                            <form action="{% url 'cart:cart_remove' item.product.id %}" method="post">
-                                {% csrf_token %}
-                                <button type="submit" class="link-button danger-link">Remove</button>
-                            </form>
-                        </div>
-                    </article>
-                {% endfor %}
+                        {% endfor %}
+                    </div>
+                </div>
             </div>
         </div>
-
-        <aside class="card summary-card">
-            <h2>Cart summary</h2>
-            <div class="summary-line">
-                <span>Items</span>
-                <strong>{{ cart|length }}</strong>
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <h2 class="h4 mb-4">Summary</h2>
+                    <div class="d-flex justify-content-between mb-3">
+                        <span class="text-secondary">Items</span>
+                        <strong>{{ cart|length }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-4">
+                        <span class="text-secondary">Subtotal</span>
+                        <strong>PHP {{ cart.get_subtotal_price }}</strong>
+                    </div>
+                    {% if request.user.is_authenticated %}
+                        <a class="btn btn-dark btn-lg w-100" href="{% url 'orders:checkout' %}">Proceed to checkout</a>
+                    {% else %}
+                        <a class="btn btn-dark btn-lg w-100" href="{% url 'login' %}?next={% url 'orders:checkout' %}">Login to checkout</a>
+                    {% endif %}
+                </div>
             </div>
-            <div class="summary-line">
-                <span>Subtotal</span>
-                <strong>PHP {{ cart.get_subtotal_price }}</strong>
-            </div>
-            {% if request.user.is_authenticated %}
-                <a class="btn btn-primary btn-block" href="{% url 'orders:checkout' %}">Proceed to checkout</a>
-            {% else %}
-                <p class="muted-copy">Log in before checking out.</p>
-                <a class="btn btn-primary btn-block" href="{% url 'login' %}?next={% url 'orders:checkout' %}">Login to checkout</a>
-            {% endif %}
-        </aside>
-    </section>
+        </div>
+    </div>
 {% else %}
-    <section class="card">
-        <h2>Your cart is empty</h2>
-        <p class="empty-state">Add a few products to get started.</p>
-    </section>
+    <div class="card border-0 shadow-sm">
+        <div class="card-body py-5 text-center">
+            <h2 class="h4 mb-3">Your cart is empty</h2>
+            <p class="text-secondary mb-4">Start with a few house favorites from the shop.</p>
+            <a class="btn btn-dark btn-lg" href="{% url 'products:product_list' %}">Browse products</a>
+        </div>
+    </div>
 {% endif %}
 {% endblock %}

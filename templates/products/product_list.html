@@ -1,95 +1,54 @@
 {% extends "base.html" %}
+{% load static %}
 
-{% block title %}Products | Django Store{% endblock %}
+{% block title %}{{ site_name }} | Shop{% endblock %}
 
 {% block content %}
-<section class="page-hero">
-    <div>
-        <p class="eyebrow">Catalog</p>
-        <h1>Find your next favorite item</h1>
-        <p>Browse the full product catalog, search by keyword, or narrow the list by category.</p>
-    </div>
-    <div class="hero-meta">
-        <span class="meta-chip">{{ page_obj.paginator.count }} product{{ page_obj.paginator.count|pluralize }}</span>
-        {% if selected_category %}
-            <span class="meta-chip">Category: {{ selected_category.name }}</span>
-        {% endif %}
-        {% if query %}
-            <span class="meta-chip">Search: "{{ query }}"</span>
-        {% endif %}
-    </div>
-</section>
+{{ react_config|json_script:"storefront-config" }}
+<div id="storefront-root"></div>
 
-<section class="catalog-layout">
-    <aside class="card sidebar-card">
-        <h2>Categories</h2>
-        <div class="category-list">
-            <a class="category-pill {% if not selected_category %}active{% endif %}" href="{% url 'products:product_list' %}{% if query %}?q={{ query|urlencode }}{% endif %}">
-                All
-            </a>
-            {% for category in categories %}
-                <a
-                    class="category-pill {% if selected_category and selected_category.id == category.id %}active{% endif %}"
-                    href="{% url 'products:product_list' %}?category={{ category.slug }}{% if query %}&q={{ query|urlencode }}{% endif %}"
-                >
-                    {{ category.name }}
-                </a>
-            {% endfor %}
+<noscript>
+    <section class="card border-0 shadow-sm mb-4 hero-gradient">
+        <div class="card-body p-4 p-lg-5">
+            <span class="badge text-bg-warning rounded-pill mb-3">JavaScript is off</span>
+            <h1 class="display-6 fw-bold">Browse {{ site_name }} the classic way</h1>
+            <p class="lead text-secondary mb-0">The React storefront is disabled, so here is the server-rendered catalog fallback.</p>
         </div>
-    </aside>
+    </section>
 
-    <div class="product-grid">
+    <div class="row g-4">
         {% for product in page_obj %}
-            <article class="product-card">
-                <a class="product-media" href="{% url 'products:product_detail' product.slug %}">
+            <div class="col-md-6 col-xl-4">
+                <article class="card border-0 shadow-sm h-100">
                     {% if product.image %}
-                        <img src="{{ product.image.url }}" alt="{{ product.name }}">
+                        <img src="{{ product.image.url }}" class="card-img-top product-image" alt="{{ product.name }}">
                     {% else %}
-                        <div class="image-placeholder">No image</div>
+                        <div class="product-image product-image-placeholder d-flex align-items-center justify-content-center">No image yet</div>
                     {% endif %}
-                </a>
-                <div class="product-body">
-                    <p class="product-category">{{ product.category.name }}</p>
-                    <h2><a href="{% url 'products:product_detail' product.slug %}">{{ product.name }}</a></h2>
-                    <p class="product-copy">{{ product.description|truncatewords:18 }}</p>
-                    <div class="product-meta">
-                        <p class="price">PHP {{ product.price }}</p>
-                        <p class="rating-copy">{{ product.avg_rating|default:0|floatformat:1 }}/5 ({{ product.review_total }})</p>
+                    <div class="card-body d-flex flex-column">
+                        <span class="badge text-bg-light border text-secondary align-self-start mb-2">{{ product.category.name }}</span>
+                        <h2 class="h5">{{ product.name }}</h2>
+                        <p class="text-secondary">{{ product.description|truncatewords:18 }}</p>
+                        <div class="d-flex justify-content-between align-items-center mt-auto">
+                            <strong class="text-danger">PHP {{ product.price }}</strong>
+                            <a class="btn btn-dark" href="{% url 'products:product_detail' product.slug %}">View</a>
+                        </div>
                     </div>
-                    <div class="product-actions">
-                        <span class="stock-copy {% if product.stock > 0 %}in-stock{% else %}out-of-stock{% endif %}">
-                            {% if product.stock > 0 %}{{ product.stock }} in stock{% else %}Out of stock{% endif %}
-                        </span>
-                        <form action="{% url 'cart:cart_add' product.id %}" method="post" class="inline-form">
-                            {% csrf_token %}
-                            <input type="hidden" name="quantity" value="1">
-                            <input type="hidden" name="override" value="">
-                            <input type="hidden" name="next" value="{{ request.get_full_path }}">
-                            <button type="submit" class="btn btn-primary" {% if product.stock == 0 %}disabled{% endif %}>
-                                Add to cart
-                            </button>
-                        </form>
+                </article>
+            </div>
+        {% empty %}
+            <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body py-5 text-center">
+                        <h2 class="h4">No products found</h2>
                     </div>
                 </div>
-            </article>
-        {% empty %}
-            <article class="card">
-                <h2>No products found</h2>
-                <p class="empty-state">Try a different search term or clear the category filter.</p>
-            </article>
+            </div>
         {% endfor %}
     </div>
-</section>
+</noscript>
+{% endblock %}
 
-{% if page_obj.paginator.num_pages > 1 %}
-    <nav class="pagination">
-        {% if page_obj.has_previous %}
-            <a href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query|urlencode }}{% endif %}{% if selected_category %}&category={{ selected_category.slug }}{% endif %}">Previous</a>
-        {% endif %}
-        <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
-        {% if page_obj.has_next %}
-            <a href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query|urlencode }}{% endif %}{% if selected_category %}&category={{ selected_category.slug }}{% endif %}">Next</a>
-        {% endif %}
-    </nav>
-{% endif %}
+{% block extra_js %}
+<script type="module" src="{% static 'frontend/storefront.js' %}"></script>
 {% endblock %}

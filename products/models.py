@@ -3,6 +3,7 @@ from uuid import uuid4
 
 from django.db import models
 from django.template.defaultfilters import slugify
+from django.urls import reverse
 
 
 class Category(models.Model):
@@ -16,6 +17,9 @@ class Category(models.Model):
 
     def __str__(self):
         return self.name
+
+    def get_absolute_url(self):
+        return f"{reverse('products:product_list')}?category={self.slug}"
 
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -77,3 +81,6 @@ class Product(models.Model):
     @property
     def is_in_stock(self):
         return self.stock > 0
+
+    def get_absolute_url(self):
+        return reverse("products:product_detail", args=[self.slug])

@@ -1,0 +1,26 @@
+{% extends "admin/base.html" %}
+{% load static %}
+
+{% block title %}{{ title }} | Lola Josie Tindahan Admin{% endblock %}
+
+{% block extrastyle %}
+    {{ block.super }}
+    <link rel="stylesheet" href="{% static 'css/admin-custom.css' %}">
+{% endblock %}
+
+{% block branding %}
+    <div class="lj-admin-brand">
+        <div class="lj-admin-mark">LJ</div>
+        <div>
+            <h1 id="site-name"><a href="{% url 'admin:index' %}">Lola Josie Tindahan Admin</a></h1>
+            <p class="lj-admin-subtitle">Control room for products, orders, customers, and reviews</p>
+        </div>
+    </div>
+{% endblock %}
+
+{% block nav-global %}
+    <div class="lj-admin-links">
+        <a href="{% url 'products:product_list' %}">View storefront</a>
+        <a href="{% url 'users:dashboard' %}">Staff dashboard</a>
+    </div>
+{% endblock %}

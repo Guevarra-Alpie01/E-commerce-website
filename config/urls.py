@@ -2,18 +2,21 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
+from django.views.generic import RedirectView
 
-admin.site.site_header = "E-Commerce Admin"
-admin.site.site_title = "E-Commerce Admin Portal"
+admin.site.site_header = "Lola Josie Tindahan Admin"
+admin.site.site_title = "Lola Josie Tindahan Control Room"
 admin.site.index_title = "Store Management"
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path("api/", include("api.urls")),
     path("accounts/", include("django.contrib.auth.urls")),
     path("users/", include("users.urls")),
     path("cart/", include("cart.urls")),
     path("orders/", include("orders.urls")),
     path("reviews/", include("reviews.urls")),
+    path("dashboard/", RedirectView.as_view(pattern_name="users:dashboard", permanent=False)),
     path("", include("products.urls")),
 ]
 

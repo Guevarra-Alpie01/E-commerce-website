@@ -1,35 +1,46 @@
 {% extends "base.html" %}
 
-{% block title %}Order History | Django Store{% endblock %}
+{% block title %}Orders | {{ site_name }}{% endblock %}
 
 {% block content %}
-<section class="page-hero">
-    <div>
-        <p class="eyebrow">Orders</p>
-        <h1>Your order history</h1>
-        <p>Track previous purchases and view each order's current status.</p>
+<section class="card border-0 shadow-sm hero-gradient mb-4">
+    <div class="card-body p-4 p-lg-5">
+        <span class="badge text-bg-warning rounded-pill mb-3">Order history</span>
+        <h1 class="display-6 fw-bold mb-2">Track your orders</h1>
+        <p class="text-secondary mb-0">See every order you have placed and follow its status.</p>
     </div>
 </section>
 
-<section class="card">
-    {% if orders %}
-        <div class="order-list">
-            {% for order in orders %}
-                <article class="order-card">
-                    <div>
-                        <h2>Order #{{ order.id }}</h2>
-                        <p>{{ order.created_at|date:"M d, Y H:i" }}</p>
-                    </div>
-                    <div>
-                        <p>Status: <strong>{{ order.status }}</strong></p>
-                        <p class="price">PHP {{ order.subtotal }}</p>
-                        <a href="{% url 'orders:order_detail' order.id %}">View details</a>
-                    </div>
-                </article>
-            {% endfor %}
-        </div>
-    {% else %}
-        <p class="empty-state">You have not placed any orders yet.</p>
-    {% endif %}
-</section>
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-4">
+        {% if orders %}
+            <div class="table-responsive">
+                <table class="table align-middle">
+                    <thead>
+                        <tr>
+                            <th>Order</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th>Total</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in orders %}
+                            <tr>
+                                <td>#{{ order.id }}</td>
+                                <td>{{ order.created_at|date:"M d, Y H:i" }}</td>
+                                <td><span class="badge text-bg-light border">{{ order.status }}</span></td>
+                                <td>PHP {{ order.subtotal }}</td>
+                                <td><a class="btn btn-sm btn-outline-dark" href="{% url 'orders:order_detail' order.id %}">View</a></td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="text-secondary mb-0">You have not placed any orders yet.</p>
+        {% endif %}
+    </div>
+</div>
 {% endblock %}

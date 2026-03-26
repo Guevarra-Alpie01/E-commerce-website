@@ -1,70 +1,84 @@
 {% extends "base.html" %}
 
-{% block title %}Dashboard | Django Store{% endblock %}
+{% block title %}Dashboard | {{ site_name }}{% endblock %}
 
 {% block content %}
-<section class="page-hero">
-    <div>
-        <p class="eyebrow">Staff dashboard</p>
-        <h1>Store overview</h1>
-        <p>A simple at-a-glance summary of orders, products, users, and inventory.</p>
+<section class="admin-hero rounded-4 shadow-sm p-4 p-lg-5 mb-4">
+    <div class="d-flex flex-column flex-lg-row justify-content-between gap-3">
+        <div>
+            <span class="badge text-bg-warning rounded-pill mb-3">Staff dashboard</span>
+            <h1 class="display-6 fw-bold mb-2">{{ site_name }} command center</h1>
+            <p class="mb-0 text-white-50">Track store health, recent orders, and inventory at a glance.</p>
+        </div>
+        <div class="align-self-lg-center">
+            <a class="btn btn-warning btn-lg rounded-pill" href="{% url 'admin:index' %}">Open custom admin</a>
+        </div>
     </div>
-    <a class="btn btn-secondary" href="{% url 'admin:index' %}">Open admin</a>
 </section>
 
-<section class="grid four-up">
-    <article class="stat-card">
-        <p>Total users</p>
-        <h2>{{ stats.total_users }}</h2>
-    </article>
-    <article class="stat-card">
-        <p>Total products</p>
-        <h2>{{ stats.total_products }}</h2>
-    </article>
-    <article class="stat-card">
-        <p>Total orders</p>
-        <h2>{{ stats.total_orders }}</h2>
-    </article>
-    <article class="stat-card">
-        <p>Pending orders</p>
-        <h2>{{ stats.pending_orders }}</h2>
-    </article>
-</section>
+<div class="row g-4 mb-4">
+    <div class="col-md-6 col-xl-3">
+        <div class="card border-0 shadow-sm admin-stat-card h-100"><div class="card-body"><div class="text-secondary">Users</div><div class="display-6 fw-bold">{{ stats.total_users }}</div></div></div>
+    </div>
+    <div class="col-md-6 col-xl-3">
+        <div class="card border-0 shadow-sm admin-stat-card h-100"><div class="card-body"><div class="text-secondary">Products</div><div class="display-6 fw-bold">{{ stats.total_products }}</div></div></div>
+    </div>
+    <div class="col-md-6 col-xl-3">
+        <div class="card border-0 shadow-sm admin-stat-card h-100"><div class="card-body"><div class="text-secondary">Orders</div><div class="display-6 fw-bold">{{ stats.total_orders }}</div></div></div>
+    </div>
+    <div class="col-md-6 col-xl-3">
+        <div class="card border-0 shadow-sm admin-stat-card h-100"><div class="card-body"><div class="text-secondary">Inventory units</div><div class="display-6 fw-bold">{{ stats.inventory_units }}</div></div></div>
+    </div>
+</div>
 
-<section class="grid two-up">
-    <article class="card">
-        <h2>Recent orders</h2>
-        <div class="order-list compact">
-            {% for order in recent_orders %}
-                <div class="order-card">
-                    <div>
-                        <h3>Order #{{ order.id }}</h3>
-                        <p>{{ order.user.username }} | {{ order.status }}</p>
-                    </div>
-                    <div>
-                        <p class="price">PHP {{ order.subtotal }}</p>
-                        <span class="muted-copy">{{ order.created_at|date:"M d, Y H:i" }}</span>
-                    </div>
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body p-4">
+                <h2 class="h4 mb-4">Recent orders</h2>
+                <div class="table-responsive">
+                    <table class="table align-middle">
+                        <thead>
+                            <tr>
+                                <th>Order</th>
+                                <th>Customer</th>
+                                <th>Status</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in recent_orders %}
+                                <tr>
+                                    <td>#{{ order.id }}</td>
+                                    <td>{{ order.user.username }}</td>
+                                    <td><span class="badge text-bg-light border">{{ order.status }}</span></td>
+                                    <td>PHP {{ order.subtotal }}</td>
+                                </tr>
+                            {% empty %}
+                                <tr><td colspan="4" class="text-secondary">No orders yet.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
-            {% empty %}
-                <p class="empty-state">No orders yet.</p>
-            {% endfor %}
+            </div>
         </div>
-    </article>
-
-    <article class="card">
-        <h2>Inventory snapshot</h2>
-        <p class="muted-copy">Units available across all products: <strong>{{ stats.inventory_units }}</strong></p>
-        <div class="category-list">
-            {% for category in top_categories %}
-                <div class="category-pill wide">
-                    <span>{{ category.category__name|default:"Uncategorized" }}</span>
-                    <strong>{{ category.total }}</strong>
+    </div>
+    <div class="col-lg-5">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body p-4">
+                <h2 class="h4 mb-4">Top categories</h2>
+                <div class="vstack gap-3">
+                    {% for category in top_categories %}
+                        <div class="d-flex justify-content-between border rounded-4 p-3">
+                            <span>{{ category.category__name|default:"Uncategorized" }}</span>
+                            <strong>{{ category.total }}</strong>
+                        </div>
+                    {% empty %}
+                        <p class="text-secondary mb-0">No categories available yet.</p>
+                    {% endfor %}
                 </div>
-            {% empty %}
-                <p class="empty-state">Add products to see category stats.</p>
-            {% endfor %}
+            </div>
         </div>
-    </article>
-</section>
+    </div>
+</div>
 {% endblock %}

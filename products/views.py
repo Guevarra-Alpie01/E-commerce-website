@@ -1,5 +1,6 @@
 from django.core.paginator import Paginator
 from django.db.models import Avg, Count, Q
+from django.views.decorators.csrf import ensure_csrf_cookie
 from django.shortcuts import get_object_or_404, render
 
 from cart.forms import CartAddProductForm
@@ -9,6 +10,7 @@ from reviews.models import Review
 from .models import Category, Product
 
 
+@ensure_csrf_cookie
 def product_list(request):
     query = request.GET.get("q", "").strip()
     category_slug = request.GET.get("category", "").strip()
@@ -40,11 +42,19 @@ def product_list(request):
         request,
         "products/product_list.html",
         {
+            "query": query,
+            "selected_category": selected_category,
             "page_obj": page_obj,
             "categories": categories,
-            "selected_category": selected_category,
-            "query": query,
-            "cart_form": CartAddProductForm(initial={"quantity": 1}),
+            "react_config": {
+                "productsApi": "/api/products/",
+                "categoriesApi": "/api/categories/",
+                "cartSummaryApi": "/api/cart/summary/",
+                "cartAddApi": "/api/cart/add/",
+                "productBasePath": "/products/",
+                "initialSearch": query,
+                "initialCategory": selected_category.slug if selected_category else "",
+            },
         },
     )
 

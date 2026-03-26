@@ -1,36 +1,33 @@
 {% extends "base.html" %}
 
-{% block title %}Login | Django Store{% endblock %}
+{% block title %}Login | {{ site_name }}{% endblock %}
 
 {% block content %}
-<section class="auth-shell">
-    <div class="card form-card narrow">
-        <div class="section-heading">
-            <p class="eyebrow">Welcome back</p>
-            <h1>Log in to your account</h1>
-        </div>
-        <form method="post" class="stack-form">
-            {% csrf_token %}
-            {% for field in form %}
-                <div class="field-group">
-                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                    {{ field }}
-                    {% if field.help_text %}
-                        <small class="help-text">{{ field.help_text }}</small>
-                    {% endif %}
-                    {% for error in field.errors %}
-                        <p class="field-error">{{ error }}</p>
+<div class="row justify-content-center">
+    <div class="col-lg-5">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4 p-lg-5">
+                <span class="badge text-bg-warning rounded-pill mb-3">Welcome back</span>
+                <h1 class="h2 mb-3">Log in to {{ site_name }}</h1>
+                <p class="text-secondary mb-4">Sign in to place orders, review products, and manage your account.</p>
+                <form method="post" class="vstack gap-3">
+                    {% csrf_token %}
+                    {% for field in form %}
+                        <div>
+                            <label class="form-label fw-semibold" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                            {{ field }}
+                            {% for error in field.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
+                            {% endfor %}
+                        </div>
                     {% endfor %}
-                </div>
-            {% endfor %}
-            {% if form.non_field_errors %}
-                {% for error in form.non_field_errors %}
-                    <p class="field-error">{{ error }}</p>
-                {% endfor %}
-            {% endif %}
-            <button type="submit" class="btn btn-primary btn-block">Login</button>
-        </form>
-        <p class="muted-copy">Need an account? <a href="{% url 'users:register' %}">Create one here.</a></p>
+                    {% for error in form.non_field_errors %}
+                        <div class="alert alert-danger mb-0">{{ error }}</div>
+                    {% endfor %}
+                    <button type="submit" class="btn btn-dark btn-lg">Login</button>
+                </form>
+            </div>
+        </div>
     </div>
-</section>
+</div>
 {% endblock %}

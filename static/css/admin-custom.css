@@ -1,0 +1,160 @@
+:root {
+    --lj-ink: #2a211a;
+    --lj-accent: #d97706;
+    --lj-accent-dark: #92400e;
+    --lj-soft: #fff7ed;
+    --lj-line: #e5c9aa;
+}
+
+#header {
+    background: linear-gradient(135deg, #2a211a, #7c2d12);
+    color: #fff;
+}
+
+#header a:link,
+#header a:visited {
+    color: #fff8f0;
+}
+
+.lj-admin-brand {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.lj-admin-mark {
+    width: 44px;
+    height: 44px;
+    border-radius: 999px;
+    background: rgba(245, 158, 11, 0.2);
+    display: grid;
+    place-items: center;
+    font-weight: 700;
+}
+
+.lj-admin-subtitle {
+    margin: 0.25rem 0 0;
+    color: rgba(255, 248, 240, 0.78);
+    font-size: 0.9rem;
+}
+
+.lj-admin-links {
+    display: flex;
+    gap: 1rem;
+}
+
+.lj-admin-links a {
+    color: #fff8f0;
+}
+
+.lj-admin-hero {
+    display: flex;
+    justify-content: space-between;
+    gap: 1.5rem;
+    align-items: center;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    border-radius: 20px;
+    background: linear-gradient(135deg, #fff7ed, #ffedd5);
+    border: 1px solid var(--lj-line);
+}
+
+.lj-admin-hero h2 {
+    margin: 0.5rem 0;
+}
+
+.lj-admin-hero p {
+    margin: 0;
+    max-width: 60ch;
+}
+
+.lj-badge {
+    display: inline-flex;
+    padding: 0.35rem 0.8rem;
+    border-radius: 999px;
+    background: #fff;
+    color: var(--lj-accent-dark);
+    font-weight: 700;
+}
+
+.lj-admin-quicklinks {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.lj-admin-quicklinks .button {
+    background: var(--lj-accent);
+    border-radius: 999px;
+    padding: 0.7rem 1rem;
+    color: #fff;
+}
+
+.lj-admin-quicklinks .button.secondary {
+    background: #fff;
+    color: var(--lj-ink);
+    border: 1px solid var(--lj-line);
+}
+
+.lj-admin-stats {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.lj-admin-stats article {
+    background: #fff;
+    border: 1px solid var(--lj-line);
+    border-radius: 18px;
+    padding: 1rem;
+}
+
+.lj-admin-stats span {
+    display: block;
+    color: #6b5b4a;
+    margin-bottom: 0.4rem;
+}
+
+.lj-admin-stats strong {
+    font-size: 1.75rem;
+}
+
+.app-list-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.app-list-grid .module {
+    background: #fff;
+    border-radius: 18px;
+    overflow: hidden;
+    border: 1px solid var(--lj-line);
+}
+
+.app-list-grid caption {
+    background: var(--lj-soft);
+    color: var(--lj-ink);
+    font-weight: 700;
+}
+
+@media (max-width: 1024px) {
+    .lj-admin-stats,
+    .app-list-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 700px) {
+    .lj-admin-hero,
+    .lj-admin-brand {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .lj-admin-stats,
+    .app-list-grid {
+        grid-template-columns: 1fr;
+    }
+}

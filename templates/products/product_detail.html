@@ -1,84 +1,95 @@
 {% extends "base.html" %}
 
-{% block title %}{{ product.name }} | Django Store{% endblock %}
+{% block title %}{{ product.name }} | {{ site_name }}{% endblock %}
 
 {% block content %}
-<section class="product-detail">
-    <div class="product-detail-media">
-        {% if product.image %}
-            <img src="{{ product.image.url }}" alt="{{ product.name }}">
-        {% else %}
-            <div class="image-placeholder large">No image uploaded</div>
-        {% endif %}
-    </div>
-    <div class="product-detail-body">
-        <p class="eyebrow">{{ product.category.name }}</p>
-        <h1>{{ product.name }}</h1>
-        <p class="price hero-price">PHP {{ product.price }}</p>
-        <p class="rating-copy">{{ product.avg_rating|default:0|floatformat:1 }}/5 average from {{ product.review_total }} review{{ product.review_total|pluralize }}</p>
-        <p class="product-copy">{{ product.description }}</p>
-
-        <div class="detail-meta">
-            <span class="stock-copy {% if product.stock > 0 %}in-stock{% else %}out-of-stock{% endif %}">
-                {% if product.stock > 0 %}{{ product.stock }} unit{{ product.stock|pluralize }} available{% else %}Currently out of stock{% endif %}
-            </span>
+<div class="row g-4 mb-4">
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm overflow-hidden">
+            {% if product.image %}
+                <img src="{{ product.image.url }}" class="img-fluid product-image" alt="{{ product.name }}">
+            {% else %}
+                <div class="product-image product-image-placeholder d-flex align-items-center justify-content-center">No image uploaded</div>
+            {% endif %}
         </div>
-
-        <form action="{% url 'cart:cart_add' product.id %}" method="post" class="purchase-form">
-            {% csrf_token %}
-            <div class="field-group qty-group">
-                <label for="{{ cart_form.quantity.id_for_label }}">Quantity</label>
-                {{ cart_form.quantity }}
-                {{ cart_form.override }}
-            </div>
-            <input type="hidden" name="next" value="{{ request.path }}">
-            <button type="submit" class="btn btn-primary" {% if product.stock == 0 %}disabled{% endif %}>
-                Add to cart
-            </button>
-        </form>
     </div>
-</section>
-
-<section class="grid two-up">
-    <article class="card">
-        <h2>Customer reviews</h2>
-        <div class="review-list">
-            {% for review in reviews %}
-                <div class="review-card">
-                    <div class="review-head">
-                        <strong>{{ review.user.username }}</strong>
-                        <span>{{ review.rating }}/5</span>
-                    </div>
-                    <p>{{ review.comment }}</p>
-                    <small class="muted-copy">{{ review.updated_at|date:"M d, Y H:i" }}</small>
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body p-4 p-lg-5">
+                <span class="badge text-bg-warning rounded-pill mb-3">{{ product.category.name }}</span>
+                <h1 class="display-6 fw-bold">{{ product.name }}</h1>
+                <p class="text-secondary fs-5 mb-3">{{ product.description }}</p>
+                <div class="d-flex flex-wrap align-items-center gap-3 mb-4">
+                    <strong class="fs-3 text-danger">PHP {{ product.price }}</strong>
+                    <span class="badge {% if product.stock > 0 %}text-bg-success{% else %}text-bg-secondary{% endif %}">
+                        {% if product.stock > 0 %}{{ product.stock }} in stock{% else %}Out of stock{% endif %}
+                    </span>
+                    <span class="text-secondary">{{ product.avg_rating|default:0|floatformat:1 }} / 5 from {{ product.review_total }} review{{ product.review_total|pluralize }}</span>
                 </div>
-            {% empty %}
-                <p class="empty-state">No reviews yet. Be the first to share your opinion.</p>
-            {% endfor %}
+                <form action="{% url 'cart:cart_add' product.id %}" method="post" class="row g-3 align-items-end">
+                    {% csrf_token %}
+                    <div class="col-sm-4">
+                        <label class="form-label fw-semibold" for="{{ cart_form.quantity.id_for_label }}">Quantity</label>
+                        {{ cart_form.quantity }}
+                        {{ cart_form.override }}
+                    </div>
+                    <div class="col-sm-8">
+                        <input type="hidden" name="next" value="{{ request.path }}">
+                        <button type="submit" class="btn btn-dark btn-lg" {% if product.stock == 0 %}disabled{% endif %}>Add to cart</button>
+                    </div>
+                </form>
+            </div>
         </div>
-    </article>
+    </div>
+</div>
 
-    <article class="card">
-        <h2>{% if user_review %}Update your review{% else %}Leave a review{% endif %}</h2>
-        {% if request.user.is_authenticated %}
-            <form action="{% url 'reviews:submit_review' product.slug %}" method="post" class="stack-form">
-                {% csrf_token %}
-                {% for field in review_form %}
-                    <div class="field-group">
-                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                        {{ field }}
-                        {% for error in field.errors %}
-                            <p class="field-error">{{ error }}</p>
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body p-4">
+                <h2 class="h4 mb-4">Customer reviews</h2>
+                {% if reviews %}
+                    <div class="vstack gap-3">
+                        {% for review in reviews %}
+                            <div class="border rounded-4 p-3">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <strong>{{ review.user.username }}</strong>
+                                    <span class="badge text-bg-light border">{{ review.rating }} / 5</span>
+                                </div>
+                                <p class="mb-2">{{ review.comment }}</p>
+                                <div class="text-secondary small">{{ review.updated_at|date:"M d, Y H:i" }}</div>
+                            </div>
                         {% endfor %}
                     </div>
-                {% endfor %}
-                <button type="submit" class="btn btn-primary">
-                    {% if user_review %}Update review{% else %}Submit review{% endif %}
-                </button>
-            </form>
-        {% else %}
-            <p class="empty-state">You need to <a href="{% url 'login' %}?next={{ request.path }}">log in</a> before leaving a review.</p>
-        {% endif %}
-    </article>
-</section>
+                {% else %}
+                    <p class="text-secondary mb-0">No reviews yet. Be the first to leave one.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body p-4">
+                <h2 class="h4 mb-4">{% if user_review %}Update your review{% else %}Leave a review{% endif %}</h2>
+                {% if request.user.is_authenticated %}
+                    <form action="{% url 'reviews:submit_review' product.slug %}" method="post" class="vstack gap-3">
+                        {% csrf_token %}
+                        {% for field in review_form %}
+                            <div>
+                                <label class="form-label fw-semibold" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                {{ field }}
+                                {% for error in field.errors %}
+                                    <div class="text-danger small mt-1">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        {% endfor %}
+                        <button type="submit" class="btn btn-dark">{% if user_review %}Update review{% else %}Submit review{% endif %}</button>
+                    </form>
+                {% else %}
+                    <p class="text-secondary mb-0">Please <a href="{% url 'login' %}?next={{ request.path }}">log in</a> to leave a review.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
