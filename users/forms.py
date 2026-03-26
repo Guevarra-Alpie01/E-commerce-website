@@ -1,4 +1,5 @@
 from django import forms
+from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 
@@ -35,6 +36,15 @@ class SignUpForm(StyledFormMixin, UserCreationForm):
         if commit:
             user.save()
         return user
+
+
+class UnifiedAuthenticationForm(StyledFormMixin, AuthenticationForm):
+    username = forms.CharField(widget=forms.TextInput(attrs={"placeholder": "Username or email"}))
+    password = forms.CharField(widget=forms.PasswordInput(attrs={"placeholder": "Password"}))
+
+    def __init__(self, request=None, *args, **kwargs):
+        super().__init__(request=request, *args, **kwargs)
+        self.apply_bootstrap()
 
 
 class UserUpdateForm(StyledFormMixin, forms.ModelForm):

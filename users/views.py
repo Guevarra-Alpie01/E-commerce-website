@@ -1,16 +1,46 @@
 from django.contrib import messages
-from django.contrib.auth import login
+from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
+from django.utils.http import url_has_allowed_host_and_scheme
 
-from .admin_access import admin_required
-from .forms import ProfileForm, SignUpForm, UserUpdateForm
+from .admin_access import admin_required, is_admin_user
+from .forms import ProfileForm, SignUpForm, UnifiedAuthenticationForm, UserUpdateForm
 from .models import UserProfile
+
+
+def resolve_next_url(request):
+    next_url = request.POST.get("next") or request.GET.get("next")
+    if next_url and url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
+        return next_url
+    return None
+
+
+def login_redirect_for(user, fallback="users:profile"):
+    if is_admin_user(user):
+        return "admin_dashboard:index"
+    return fallback
+
+
+def login_entry(request):
+    next_url = resolve_next_url(request)
+    target = "products:product_list"
+    if request.user.is_authenticated:
+        return redirect(next_url or login_redirect_for(request.user))
+    if next_url:
+        return redirect(f"{redirect(target).url}?next={next_url}")
+    return redirect(target)
+
+
+def logout_view(request):
+    logout(request)
+    messages.info(request, "You have been logged out.")
+    return redirect("products:product_list")
 
 
 def register(request):
     if request.user.is_authenticated:
-        return redirect("users:profile")
+        return redirect(login_redirect_for(request.user))
 
     if request.method == "POST":
         form = SignUpForm(request.POST)
@@ -18,7 +48,7 @@ def register(request):
             user = form.save()
             login(request, user)
             messages.success(request, "Your account has been created successfully.")
-            return redirect("users:profile")
+            return redirect(login_redirect_for(user))
     else:
         form = SignUpForm()
 
@@ -27,6 +57,9 @@ def register(request):
 
 @login_required
 def profile(request):
+    if is_admin_user(request.user):
+        return redirect("admin_dashboard:index")
+
     profile, _ = UserProfile.objects.get_or_create(user=request.user)
 
     if request.method == "POST":

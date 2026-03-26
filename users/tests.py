@@ -27,6 +27,19 @@ class RegistrationTests(TestCase):
         user = User.objects.get(username="nina")
         self.assertTrue(UserProfile.objects.filter(user=user).exists())
 
+    def test_register_redirects_admin_users_to_dashboard(self):
+        admin_user = User.objects.create_user(
+            username="admin-sample",
+            password="secret12345",
+            email="admin@example.com",
+            is_staff=True,
+        )
+        self.client.login(username="admin-sample", password="secret12345")
+
+        response = self.client.get(reverse("users:register"))
+
+        self.assertRedirects(response, reverse("admin_dashboard:index"))
+
 
 class CustomAdminDashboardTests(TestCase):
     def setUp(self):
@@ -86,6 +99,30 @@ class CustomAdminDashboardTests(TestCase):
         response = self.client.get(reverse("products:product_list"))
 
         self.assertRedirects(response, reverse("admin_dashboard:index"))
+
+    def test_homepage_login_redirects_staff_to_admin_dashboard(self):
+        response = self.client.post(
+            reverse("products:product_list"),
+            {
+                "login_submit": "1",
+                "username": "manager",
+                "password": "secret12345",
+            },
+        )
+
+        self.assertRedirects(response, reverse("admin_dashboard:index"))
+
+    def test_homepage_login_redirects_customer_to_profile(self):
+        response = self.client.post(
+            reverse("products:product_list"),
+            {
+                "login_submit": "1",
+                "username": "shopper",
+                "password": "secret12345",
+            },
+        )
+
+        self.assertRedirects(response, reverse("users:profile"))
 
     def test_normal_user_is_redirected_from_admin_dashboard(self):
         self.client.login(username="shopper", password="secret12345")

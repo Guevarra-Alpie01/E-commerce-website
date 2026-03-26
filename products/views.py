@@ -1,17 +1,39 @@
+from django.contrib import messages
+from django.contrib.auth import login
 from django.core.paginator import Paginator
 from django.db.models import Avg, Count, Q
+from django.shortcuts import get_object_or_404, redirect, render
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.csrf import ensure_csrf_cookie
-from django.shortcuts import get_object_or_404, render
 
 from cart.forms import CartAddProductForm
 from reviews.forms import ReviewForm
 from reviews.models import Review
+from users.admin_access import is_admin_user
+from users.forms import UnifiedAuthenticationForm
 
 from .models import Category, Product
 
 
 @ensure_csrf_cookie
 def product_list(request):
+    next_url = request.POST.get("next") or request.GET.get("next")
+    if next_url and not url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
+        next_url = None
+
+    login_form = UnifiedAuthenticationForm(request=request)
+    if request.method == "POST" and not request.user.is_authenticated and "login_submit" in request.POST:
+        login_form = UnifiedAuthenticationForm(request=request, data=request.POST)
+        if login_form.is_valid():
+            user = login_form.get_user()
+            login(request, user)
+            messages.success(request, f"Welcome back, {user.get_username()}.")
+            if is_admin_user(user):
+                return redirect("admin_dashboard:index")
+            if next_url:
+                return redirect(next_url)
+            return redirect("users:profile")
+
     query = request.GET.get("q", "").strip()
     category_slug = request.GET.get("category", "").strip()
 
@@ -46,6 +68,8 @@ def product_list(request):
             "selected_category": selected_category,
             "page_obj": page_obj,
             "categories": categories,
+            "login_form": login_form,
+            "login_next": next_url,
             "react_config": {
                 "productsApi": "/api/products/",
                 "categoriesApi": "/api/categories/",

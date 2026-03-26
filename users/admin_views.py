@@ -1,5 +1,5 @@
 from django.contrib import messages
-from django.contrib.auth import login, logout
+from django.contrib.auth import logout
 from django.contrib.auth.models import User
 from django.core.paginator import Paginator
 from django.db.models import Count, DecimalField, Q, Sum
@@ -14,7 +14,6 @@ from reviews.models import Review
 
 from .admin_access import admin_required, is_admin_user
 from .admin_forms import (
-    AdminAuthenticationForm,
     AdminOrderStatusForm,
     AdminPaymentStatusForm,
     AdminProductForm,
@@ -55,26 +54,11 @@ def ensure_payment(order):
 
 
 def admin_login(request):
-    if is_admin_user(request.user):
-        return redirect("admin_dashboard:index")
-
-    form = AdminAuthenticationForm(request, data=request.POST or None)
     next_url = resolve_next_url(request)
-
-    if request.method == "POST" and form.is_valid():
-        user = form.get_user()
-        if not is_admin_user(user):
-            messages.error(request, "This account does not have admin dashboard access.")
-        else:
-            login(request, user)
-            messages.success(request, f"Welcome back, {user.get_username()}.")
-            return redirect(next_url or "admin_dashboard:index")
-
-    return render(
-        request,
-        "admin_dashboard/login.html",
-        {"form": form, "next_url": next_url},
-    )
+    target = redirect("login").url
+    if next_url:
+        target = f"{target}?next={next_url}"
+    return redirect(target)
 
 
 @require_POST

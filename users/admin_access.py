@@ -11,7 +11,7 @@ def is_admin_user(user):
 
 def admin_required(view_func):
     @wraps(view_func)
-    @login_required(login_url="admin_dashboard:login")
+    @login_required(login_url="login")
     def wrapped_view(request, *args, **kwargs):
         if not is_admin_user(request.user):
             messages.error(request, "You do not have permission to access the admin dashboard.")
