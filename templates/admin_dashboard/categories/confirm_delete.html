@@ -1,0 +1,25 @@
+{% extends "admin_dashboard/base_admin.html" %}
+
+{% block title %}Delete {{ category.name }}{% endblock %}
+{% block admin_title %}Delete Category{% endblock %}
+{% block admin_intro %}Remove categories carefully so products do not lose their grouping.{% endblock %}
+
+{% block admin_content %}
+<section class="admin-panel admin-panel--narrow">
+    {% if category.product_count %}
+        <div class="alert alert-warning">
+            {{ category.name }} cannot be deleted yet because {{ category.product_count }} product{{ category.product_count|pluralize }} still use it.
+        </div>
+        <div class="admin-actions">
+            <a class="btn btn-outline-success" href="{% url 'admin_dashboard:category_list' %}">Back to Categories</a>
+        </div>
+    {% else %}
+        <p>Delete <strong>{{ category.name }}</strong>? This action cannot be undone.</p>
+        <form method="post" class="admin-actions">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger">Delete category</button>
+            <a class="btn btn-outline-success" href="{% url 'admin_dashboard:category_list' %}">Cancel</a>
+        </form>
+    {% endif %}
+</section>
+{% endblock %}

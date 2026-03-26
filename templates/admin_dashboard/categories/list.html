@@ -1,0 +1,52 @@
+{% extends "admin_dashboard/base_admin.html" %}
+
+{% block title %}Manage Categories{% endblock %}
+{% block admin_title %}Category Management{% endblock %}
+{% block admin_intro %}Organize your catalog first so products can be placed into the right sections.{% endblock %}
+
+{% block admin_content %}
+<section class="admin-panel">
+    <form method="get" class="admin-toolbar">
+        <div class="admin-toolbar__search">
+            <input type="text" name="q" class="form-control" value="{{ query }}" placeholder="Search categories">
+        </div>
+        <button type="submit" class="btn btn-outline-success">Search</button>
+        <a class="btn btn-outline-success" href="{% url 'admin_dashboard:product_list' %}">View Products</a>
+        <a class="btn btn-success" href="{% url 'admin_dashboard:category_create' %}">Add Category</a>
+    </form>
+
+    <div class="table-responsive">
+        <table class="table admin-table align-middle">
+            <thead>
+                <tr>
+                    <th>Category</th>
+                    <th>Description</th>
+                    <th>Products</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for category in page_obj %}
+                    <tr>
+                        <td><strong>{{ category.name }}</strong></td>
+                        <td>{{ category.description|default:"No description yet."|truncatewords:14 }}</td>
+                        <td>{{ category.product_count }}</td>
+                        <td class="text-end">
+                            <div class="admin-actions">
+                                <a class="btn btn-outline-success" href="{% url 'admin_dashboard:category_edit' category.id %}">Edit</a>
+                                <a class="btn btn-outline-danger" href="{% url 'admin_dashboard:category_delete' category.id %}">Delete</a>
+                            </div>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="4" class="text-center text-secondary py-4">No categories found yet.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% include "admin_dashboard/includes/pagination.html" with page_obj=page_obj querystring=querystring %}
+</section>
+{% endblock %}

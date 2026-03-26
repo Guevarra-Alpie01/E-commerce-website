@@ -2,21 +2,15 @@
 
 {% block title %}{{ title }}{% endblock %}
 {% block admin_title %}{{ title }}{% endblock %}
-{% block admin_intro %}Use the product form below to manage catalog entries, pricing, stock, and images.{% endblock %}
+{% block admin_intro %}Create the catalog sections your products will belong to.{% endblock %}
 
 {% block admin_content %}
 <section class="admin-panel admin-panel--narrow">
-    {% if not category_count %}
-        <div class="alert alert-warning">
-            Categories are required before you can create products. Add one first, then come back to this form.
-            <a href="{% url 'admin_dashboard:category_create' %}" class="alert-link">Add category</a>
-        </div>
-    {% endif %}
-    <form method="post" enctype="multipart/form-data" class="admin-form-stack">
+    <form method="post" class="admin-form-stack">
         {% csrf_token %}
         <div class="row g-3">
             {% for field in form %}
-                <div class="col-12 {% if field.name != 'description' and field.name != 'image' %}col-md-6{% endif %}">
+                <div class="col-12">
                     <label class="form-label fw-semibold" for="{{ field.id_for_label }}">{{ field.label }}</label>
                     {{ field }}
                     {% if field.help_text %}
@@ -28,9 +22,17 @@
                 </div>
             {% endfor %}
         </div>
+        {% if title == "Add category" %}
+            <div class="form-check mt-3">
+                <input class="form-check-input" type="checkbox" value="1" id="continueToProduct" name="continue_to_product">
+                <label class="form-check-label" for="continueToProduct">
+                    Go back to the product form after saving this category
+                </label>
+            </div>
+        {% endif %}
         <div class="admin-actions mt-3">
-            <button type="submit" class="btn btn-success" {% if not category_count %}disabled{% endif %}>{{ submit_label }}</button>
-            <a class="btn btn-outline-success" href="{% url 'admin_dashboard:product_list' %}">Cancel</a>
+            <button type="submit" class="btn btn-success">{{ submit_label }}</button>
+            <a class="btn btn-outline-success" href="{% url 'admin_dashboard:category_list' %}">Cancel</a>
         </div>
     </form>
 </section>

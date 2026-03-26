@@ -11,8 +11,16 @@
             <input type="text" name="q" class="form-control" value="{{ query }}" placeholder="Search products or categories">
         </div>
         <button type="submit" class="btn btn-outline-success">Search</button>
+        <a class="btn btn-outline-success" href="{% url 'admin_dashboard:category_list' %}">Manage Categories</a>
         <a class="btn btn-success" href="{% url 'admin_dashboard:product_create' %}">Add Product</a>
     </form>
+
+    {% if not category_count %}
+        <div class="alert alert-warning mt-3 mb-0">
+            Add at least one category before creating products.
+            <a href="{% url 'admin_dashboard:category_create' %}" class="alert-link">Create a category</a>.
+        </div>
+    {% endif %}
 
     <div class="table-responsive">
         <table class="table admin-table align-middle">

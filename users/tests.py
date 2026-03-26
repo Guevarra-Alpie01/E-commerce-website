@@ -149,6 +149,30 @@ class CustomAdminDashboardTests(TestCase):
         self.assertRedirects(response, reverse("admin_dashboard:product_list"))
         self.assertTrue(Product.objects.filter(name="Fresh Kale").exists())
 
+    def test_staff_can_create_category_from_custom_admin(self):
+        self.client.login(username="manager", password="secret12345")
+
+        response = self.client.post(
+            reverse("admin_dashboard:category_create"),
+            {
+                "name": "Beverages",
+                "description": "Drinks and refreshers",
+            },
+        )
+
+        self.assertRedirects(response, reverse("admin_dashboard:category_list"))
+        self.assertTrue(Category.objects.filter(name="Beverages").exists())
+
+    def test_product_create_shows_category_guidance_when_none_exist(self):
+        self.client.login(username="manager", password="secret12345")
+        Product.objects.all().delete()
+        Category.objects.all().delete()
+
+        response = self.client.get(reverse("admin_dashboard:product_create"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Categories are required before you can create products.")
+
     def test_delivered_order_marks_payment_completed(self):
         self.client.login(username="manager", password="secret12345")
 

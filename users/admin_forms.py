@@ -3,7 +3,7 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.models import User
 
 from orders.models import Order, Payment
-from products.models import Product
+from products.models import Category, Product
 
 
 class AdminStyledFormMixin:
@@ -43,6 +43,19 @@ class AdminProductForm(AdminStyledFormMixin, forms.ModelForm):
     class Meta:
         model = Product
         fields = ("category", "name", "description", "price", "stock", "image", "is_active")
+        widgets = {
+            "description": forms.Textarea(attrs={"rows": 4}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.apply_bootstrap()
+
+
+class AdminCategoryForm(AdminStyledFormMixin, forms.ModelForm):
+    class Meta:
+        model = Category
+        fields = ("name", "description")
         widgets = {
             "description": forms.Textarea(attrs={"rows": 4}),
         }

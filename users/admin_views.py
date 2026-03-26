@@ -9,11 +9,12 @@ from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 
 from orders.models import Order, Payment
-from products.models import Product
+from products.models import Category, Product
 from reviews.models import Review
 
 from .admin_access import admin_required, is_admin_user
 from .admin_forms import (
+    AdminCategoryForm,
     AdminOrderStatusForm,
     AdminPaymentStatusForm,
     AdminProductForm,
@@ -181,12 +182,14 @@ def product_list(request):
             "querystring": querystring_without_page(request),
             "section": "products",
             "low_stock_threshold": 5,
+            "category_count": Category.objects.count(),
         },
     )
 
 
 @admin_required
 def product_create(request):
+    category_count = Category.objects.count()
     if request.method == "POST":
         form = AdminProductForm(request.POST, request.FILES)
         if form.is_valid():
@@ -199,13 +202,20 @@ def product_create(request):
     return render(
         request,
         "admin_dashboard/products/form.html",
-        {"form": form, "title": "Add product", "submit_label": "Create product", "section": "products"},
+        {
+            "form": form,
+            "title": "Add product",
+            "submit_label": "Create product",
+            "section": "products",
+            "category_count": category_count,
+        },
     )
 
 
 @admin_required
 def product_edit(request, product_id):
     product = get_object_or_404(Product.objects.select_related("category"), pk=product_id)
+    category_count = Category.objects.count()
 
     if request.method == "POST":
         form = AdminProductForm(request.POST, request.FILES, instance=product)
@@ -219,7 +229,13 @@ def product_edit(request, product_id):
     return render(
         request,
         "admin_dashboard/products/form.html",
-        {"form": form, "title": f"Edit {product.name}", "submit_label": "Save changes", "section": "products"},
+        {
+            "form": form,
+            "title": f"Edit {product.name}",
+            "submit_label": "Save changes",
+            "section": "products",
+            "category_count": category_count,
+        },
     )
 
 
@@ -237,6 +253,98 @@ def product_delete(request, product_id):
         request,
         "admin_dashboard/products/confirm_delete.html",
         {"product": product, "section": "products"},
+    )
+
+
+@admin_required
+def category_list(request):
+    query = request.GET.get("q", "").strip()
+    categories = Category.objects.annotate(product_count=Count("products")).order_by("name")
+
+    if query:
+        categories = categories.filter(Q(name__icontains=query) | Q(description__icontains=query))
+
+    page_obj = paginate_queryset(request, categories, per_page=12)
+    return render(
+        request,
+        "admin_dashboard/categories/list.html",
+        {
+            "page_obj": page_obj,
+            "query": query,
+            "querystring": querystring_without_page(request),
+            "section": "products",
+        },
+    )
+
+
+@admin_required
+def category_create(request):
+    if request.method == "POST":
+        form = AdminCategoryForm(request.POST)
+        if form.is_valid():
+            category = form.save()
+            messages.success(request, f"{category.name} has been added.")
+            if request.POST.get("continue_to_product"):
+                return redirect("admin_dashboard:product_create")
+            return redirect("admin_dashboard:category_list")
+    else:
+        form = AdminCategoryForm()
+
+    return render(
+        request,
+        "admin_dashboard/categories/form.html",
+        {
+            "form": form,
+            "title": "Add category",
+            "submit_label": "Create category",
+            "section": "products",
+        },
+    )
+
+
+@admin_required
+def category_edit(request, category_id):
+    category = get_object_or_404(Category, pk=category_id)
+
+    if request.method == "POST":
+        form = AdminCategoryForm(request.POST, instance=category)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f"{category.name} has been updated.")
+            return redirect("admin_dashboard:category_list")
+    else:
+        form = AdminCategoryForm(instance=category)
+
+    return render(
+        request,
+        "admin_dashboard/categories/form.html",
+        {
+            "form": form,
+            "title": f"Edit {category.name}",
+            "submit_label": "Save changes",
+            "section": "products",
+        },
+    )
+
+
+@admin_required
+def category_delete(request, category_id):
+    category = get_object_or_404(Category.objects.annotate(product_count=Count("products")), pk=category_id)
+
+    if request.method == "POST":
+        if category.product_count:
+            messages.error(request, f"{category.name} still has products assigned to it.")
+            return redirect("admin_dashboard:category_list")
+
+        category_name = category.name
+        category.delete()
+        messages.success(request, f"{category_name} has been deleted.")
+        return redirect("admin_dashboard:category_list")
+
+    return render(
+        request,
+        "admin_dashboard/categories/confirm_delete.html",
+        {"category": category, "section": "products"},
     )
 
 
