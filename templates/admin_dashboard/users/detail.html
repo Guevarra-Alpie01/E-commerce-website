@@ -1,0 +1,105 @@
+{% extends "admin_dashboard/base_admin.html" %}
+
+{% block title %}User Details{% endblock %}
+{% block admin_title %}User Details{% endblock %}
+{% block admin_intro %}Review account information, admin permissions, and that user’s order history in one place.{% endblock %}
+
+{% block admin_content %}
+<section class="admin-grid admin-grid--split">
+    <div class="admin-panel">
+        <div class="admin-panel__header">
+            <div>
+                <h2 class="h5 mb-1">{{ managed_user.username }}</h2>
+                <p class="text-secondary mb-0">{{ managed_user.email|default:"No email provided" }}</p>
+            </div>
+            {% if managed_user.is_active %}
+                <span class="admin-badge admin-badge--success">Active</span>
+            {% else %}
+                <span class="admin-badge admin-badge--danger">Inactive</span>
+            {% endif %}
+        </div>
+
+        <div class="admin-summary-grid">
+            <article>
+                <span>Full Name</span>
+                <strong>{{ managed_user.get_full_name|default:"Not set" }}</strong>
+            </article>
+            <article>
+                <span>Role</span>
+                <strong>{% if managed_user.is_superuser %}Superuser{% elif managed_user.is_staff %}Staff{% else %}Customer{% endif %}</strong>
+            </article>
+            <article>
+                <span>Phone</span>
+                <strong>{{ profile.phone|default:"Not set" }}</strong>
+            </article>
+            <article>
+                <span>Address</span>
+                <strong>{{ profile.address|default:"Not set" }}</strong>
+            </article>
+        </div>
+
+        <hr>
+
+        <form method="post" class="admin-form-stack">
+            {% csrf_token %}
+            <div class="row g-3">
+                {% for field in form %}
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                    </div>
+                {% endfor %}
+            </div>
+            <div class="admin-actions mt-3">
+                <button type="submit" class="btn btn-success">Save User</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="admin-stack">
+        <div class="admin-panel">
+            <div class="admin-panel__header">
+                <div>
+                    <h2 class="h5 mb-1">Order History</h2>
+                    <p class="text-secondary mb-0">Orders placed by this user.</p>
+                </div>
+            </div>
+            <ul class="admin-list">
+                {% for order in user_orders %}
+                    <li>
+                        <div>
+                            <strong><a href="{% url 'admin_dashboard:order_detail' order.id %}">Order #{{ order.id }}</a></strong>
+                            <small>{{ order.status }} · {{ order.created_at|date:"M d, Y" }}</small>
+                        </div>
+                        <span class="admin-badge admin-badge--neutral">PHP {{ order.subtotal }}</span>
+                    </li>
+                {% empty %}
+                    <li class="text-secondary">This user has not placed any orders yet.</li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <div class="admin-panel">
+            <div class="admin-panel__header">
+                <div>
+                    <h2 class="h5 mb-1">Recent Reviews</h2>
+                    <p class="text-secondary mb-0">Latest feedback written by this user.</p>
+                </div>
+            </div>
+            <ul class="admin-list">
+                {% for review in user_reviews %}
+                    <li>
+                        <div>
+                            <strong>{{ review.product.name }}</strong>
+                            <small>{{ review.rating }}/5 · {{ review.created_at|date:"M d, Y" }}</small>
+                        </div>
+                        <span class="text-secondary text-end">{{ review.comment|truncatewords:10 }}</span>
+                    </li>
+                {% empty %}
+                    <li class="text-secondary">No reviews from this user yet.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</section>
+{% endblock %}

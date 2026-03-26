@@ -8,7 +8,7 @@ from products.models import Product
 from users.models import UserProfile
 
 from .forms import CheckoutForm
-from .models import Order, OrderItem
+from .models import Order, OrderItem, Payment
 
 
 @login_required
@@ -53,6 +53,13 @@ def checkout(request):
                 order.user = request.user
                 order.subtotal = cart.get_subtotal_price()
                 order.save()
+                Payment.objects.create(
+                    order=order,
+                    user=request.user,
+                    amount=order.subtotal,
+                    payment_method=order.payment_method,
+                    status=Payment.Status.PENDING,
+                )
 
                 for item in cart_items:
                     product = products_map[item["product"].id]

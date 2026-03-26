@@ -1,0 +1,59 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Admin Login</title>
+    <link rel="stylesheet" href="{% static 'frontend/storefront.css' %}">
+    <link rel="stylesheet" href="{% static 'admin_dashboard/admin.css' %}">
+</head>
+<body class="admin-auth-shell">
+    <main class="admin-auth-card">
+        <div class="admin-auth-card__header">
+            <span class="admin-brand__mark">LJ</span>
+            <div>
+                <h1 class="h3 mb-1">Custom Admin Login</h1>
+                <p class="text-secondary mb-0">Use a staff or superuser account to access the admin dashboard.</p>
+            </div>
+        </div>
+
+        {% if messages %}
+            <div class="mb-3">
+                {% for message in messages %}
+                    <div class="alert {% if message.tags == 'error' %}alert-danger{% elif message.tags == 'success' %}alert-success{% else %}alert-secondary{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <form method="post" class="admin-form-stack">
+            {% csrf_token %}
+            {% if next_url %}
+                <input type="hidden" name="next" value="{{ next_url }}">
+            {% endif %}
+
+            {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                    {% for error in form.non_field_errors %}
+                        <div>{{ error }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <div>
+                <label class="form-label fw-semibold" for="{{ form.username.id_for_label }}">Username</label>
+                {{ form.username }}
+            </div>
+            <div>
+                <label class="form-label fw-semibold" for="{{ form.password.id_for_label }}">Password</label>
+                {{ form.password }}
+            </div>
+
+            <button type="submit" class="btn btn-success w-100">Login to Admin Dashboard</button>
+            <a class="btn btn-outline-success w-100" href="{% url 'products:product_list' %}">Back to Store</a>
+        </form>
+    </main>
+</body>
+</html>

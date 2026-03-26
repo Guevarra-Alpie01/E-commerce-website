@@ -1,0 +1,62 @@
+{% extends "admin_dashboard/base_admin.html" %}
+
+{% block title %}Manage Orders{% endblock %}
+{% block admin_title %}Order Management{% endblock %}
+{% block admin_intro %}Filter and inspect orders, then update each order’s status from detail view.{% endblock %}
+
+{% block admin_content %}
+<section class="admin-panel">
+    <form method="get" class="admin-toolbar admin-toolbar--filters">
+        <div class="admin-toolbar__search">
+            <input type="text" name="q" class="form-control" value="{{ query }}" placeholder="Search by order id, full name, or username">
+        </div>
+        <select name="status" class="form-select">
+            <option value="">All statuses</option>
+            {% for value, label in status_choices %}
+                <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="btn btn-success">Apply</button>
+    </form>
+
+    <div class="table-responsive">
+        <table class="table admin-table align-middle">
+            <thead>
+                <tr>
+                    <th>Order</th>
+                    <th>Customer</th>
+                    <th>Status</th>
+                    <th>Items</th>
+                    <th>Total</th>
+                    <th>Payment</th>
+                    <th class="text-end">Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in page_obj %}
+                    <tr>
+                        <td>#{{ order.id }}</td>
+                        <td>
+                            <strong>{{ order.full_name }}</strong><br>
+                            <small class="text-secondary">{{ order.user.username }}</small>
+                        </td>
+                        <td><span class="admin-badge admin-badge--neutral">{{ order.status }}</span></td>
+                        <td>{{ order.item_count }}</td>
+                        <td>PHP {{ order.subtotal }}</td>
+                        <td>{{ order.payment.status }}</td>
+                        <td class="text-end">
+                            <a class="btn btn-outline-success" href="{% url 'admin_dashboard:order_detail' order.id %}">Open</a>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center text-secondary py-4">No orders matched the current filters.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% include "admin_dashboard/includes/pagination.html" with page_obj=page_obj querystring=querystring %}
+</section>
+{% endblock %}

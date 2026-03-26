@@ -1,0 +1,68 @@
+{% extends "admin_dashboard/base_admin.html" %}
+
+{% block title %}Manage Payments{% endblock %}
+{% block admin_title %}Payment Management{% endblock %}
+{% block admin_intro %}Review payment records, filter by status, and update simulated payment completion state.{% endblock %}
+
+{% block admin_content %}
+<section class="admin-panel">
+    <form method="get" class="admin-toolbar admin-toolbar--filters">
+        <div class="admin-toolbar__search">
+            <input type="text" name="q" class="form-control" value="{{ query }}" placeholder="Search by payment ref, order id, or username">
+        </div>
+        <select name="status" class="form-select">
+            <option value="">All statuses</option>
+            {% for value, label in status_choices %}
+                <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="btn btn-success">Apply</button>
+    </form>
+
+    <div class="table-responsive">
+        <table class="table admin-table align-middle">
+            <thead>
+                <tr>
+                    <th>Reference</th>
+                    <th>Order</th>
+                    <th>User</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th>Method</th>
+                    <th class="text-end">Update</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for payment in page_obj %}
+                    <tr>
+                        <td>{{ payment.reference }}</td>
+                        <td><a href="{% url 'admin_dashboard:order_detail' payment.order_id %}">#{{ payment.order_id }}</a></td>
+                        <td>{{ payment.user.username }}</td>
+                        <td>PHP {{ payment.amount }}</td>
+                        <td><span class="admin-badge admin-badge--neutral">{{ payment.status }}</span></td>
+                        <td>{{ payment.payment_method }}</td>
+                        <td class="text-end">
+                            <form method="post" action="{% url 'admin_dashboard:payment_update_status' payment.id %}" class="admin-inline-form">
+                                {% csrf_token %}
+                                <select name="status" class="form-select form-select-sm">
+                                    {% for value, label in status_choices %}
+                                        <option value="{{ value }}" {% if payment.status == value %}selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                                <input type="hidden" name="notes" value="{{ payment.notes }}">
+                                <button type="submit" class="btn btn-outline-success">Save</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center text-secondary py-4">No payments matched the current filters.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% include "admin_dashboard/includes/pagination.html" with page_obj=page_obj querystring=querystring %}
+</section>
+{% endblock %}

@@ -1,0 +1,60 @@
+{% extends "admin_dashboard/base_admin.html" %}
+
+{% block title %}Manage Reviews{% endblock %}
+{% block admin_title %}Reviews Management{% endblock %}
+{% block admin_intro %}Filter review content by rating or search term, then remove inappropriate feedback when needed.{% endblock %}
+
+{% block admin_content %}
+<section class="admin-panel">
+    <form method="get" class="admin-toolbar admin-toolbar--filters">
+        <div class="admin-toolbar__search">
+            <input type="text" name="q" class="form-control" value="{{ query }}" placeholder="Search by product, user, or comment text">
+        </div>
+        <select name="rating" class="form-select">
+            <option value="">All ratings</option>
+            {% for value, label in ratings %}
+                <option value="{{ value }}" {% if rating_filter == value|stringformat:"s" %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="btn btn-success">Apply</button>
+    </form>
+
+    <div class="table-responsive">
+        <table class="table admin-table align-middle">
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>User</th>
+                    <th>Rating</th>
+                    <th>Comment</th>
+                    <th>Date</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for review in page_obj %}
+                    <tr>
+                        <td>{{ review.product.name }}</td>
+                        <td>{{ review.user.username }}</td>
+                        <td><span class="admin-badge admin-badge--neutral">{{ review.rating }}/5</span></td>
+                        <td>{{ review.comment|truncatewords:18 }}</td>
+                        <td>{{ review.created_at|date:"M d, Y" }}</td>
+                        <td class="text-end">
+                            <form method="post" action="{% url 'admin_dashboard:review_delete' review.id %}" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-danger">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center text-secondary py-4">No reviews matched the current filters.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% include "admin_dashboard/includes/pagination.html" with page_obj=page_obj querystring=querystring %}
+</section>
+{% endblock %}

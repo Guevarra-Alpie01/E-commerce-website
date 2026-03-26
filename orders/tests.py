@@ -4,7 +4,7 @@ from django.urls import reverse
 
 from products.models import Category, Product
 
-from .models import Order
+from .models import Order, Payment
 
 
 class CheckoutTests(TestCase):
@@ -50,6 +50,7 @@ class CheckoutTests(TestCase):
         self.product.refresh_from_db()
         self.assertEqual(self.product.stock, 3)
         self.assertEqual(order.items.count(), 1)
+        self.assertTrue(Payment.objects.filter(order=order, status=Payment.Status.PENDING).exists())
         self.assertEqual(self.client.session.get("cart"), None)
 
     def test_checkout_blocks_when_stock_is_insufficient(self):

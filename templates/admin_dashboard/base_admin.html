@@ -1,0 +1,66 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Admin Dashboard{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'frontend/storefront.css' %}">
+    <link rel="stylesheet" href="{% static 'admin_dashboard/admin.css' %}">
+</head>
+<body class="admin-panel-body">
+    <div class="admin-layout">
+        <aside class="admin-sidebar">
+            <a class="admin-brand text-decoration-none" href="{% url 'admin_dashboard:index' %}">
+                <span class="admin-brand__mark">LJ</span>
+                <span>
+                    <strong>Lola Josie Admin</strong>
+                    <small>Custom e-commerce control room</small>
+                </span>
+            </a>
+
+            <nav class="admin-nav">
+                <a class="admin-nav__link {% if section == 'dashboard' %}is-active{% endif %}" href="{% url 'admin_dashboard:index' %}">Dashboard</a>
+                <a class="admin-nav__link {% if section == 'users' %}is-active{% endif %}" href="{% url 'admin_dashboard:user_list' %}">Users</a>
+                <a class="admin-nav__link {% if section == 'products' %}is-active{% endif %}" href="{% url 'admin_dashboard:product_list' %}">Products</a>
+                <a class="admin-nav__link {% if section == 'orders' %}is-active{% endif %}" href="{% url 'admin_dashboard:order_list' %}">Orders</a>
+                <a class="admin-nav__link {% if section == 'payments' %}is-active{% endif %}" href="{% url 'admin_dashboard:payment_list' %}">Payments</a>
+                <a class="admin-nav__link {% if section == 'reviews' %}is-active{% endif %}" href="{% url 'admin_dashboard:review_list' %}">Reviews</a>
+            </nav>
+
+            <div class="admin-sidebar__footer">
+                <small>Signed in as</small>
+                <strong>{{ request.user.username }}</strong>
+            </div>
+        </aside>
+
+        <main class="admin-main">
+            <header class="admin-topbar">
+                <div>
+                    <h1 class="admin-topbar__title">{% block admin_title %}Admin Dashboard{% endblock %}</h1>
+                    <p class="admin-topbar__copy">{% block admin_intro %}Manage the storefront from one secure place.{% endblock %}</p>
+                </div>
+                <div class="admin-topbar__actions">
+                    <a class="btn btn-outline-success" href="{% url 'products:product_list' %}">View Store</a>
+                    <form action="{% url 'admin_dashboard:logout' %}" method="post" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-success">Logout</button>
+                    </form>
+                </div>
+            </header>
+
+            {% if messages %}
+                <div class="admin-messages">
+                    {% for message in messages %}
+                        <div class="alert {% if message.tags == 'error' %}alert-danger{% elif message.tags == 'success' %}alert-success{% else %}alert-secondary{% endif %}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            {% block admin_content %}{% endblock %}
+        </main>
+    </div>
+</body>
+</html>

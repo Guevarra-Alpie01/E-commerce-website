@@ -1,13 +1,9 @@
 from django.contrib import messages
 from django.contrib.auth import login
-from django.contrib.auth.decorators import login_required, user_passes_test
-from django.contrib.auth.models import User
-from django.db.models import Count, Sum
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
 
-from orders.models import Order
-from products.models import Product
-
+from .admin_access import admin_required
 from .forms import ProfileForm, SignUpForm, UserUpdateForm
 from .models import UserProfile
 
@@ -57,23 +53,6 @@ def profile(request):
     )
 
 
-@user_passes_test(lambda user: user.is_staff)
+@admin_required
 def dashboard(request):
-    stats = {
-        "total_users": User.objects.count(),
-        "total_products": Product.objects.count(),
-        "total_orders": Order.objects.count(),
-        "pending_orders": Order.objects.filter(status=Order.Status.PENDING).count(),
-        "inventory_units": Product.objects.aggregate(total=Sum("stock"))["total"] or 0,
-    }
-    recent_orders = Order.objects.select_related("user").order_by("-created_at")[:8]
-    top_categories = (
-        Product.objects.values("category__name")
-        .annotate(total=Count("id"))
-        .order_by("-total", "category__name")[:5]
-    )
-    return render(
-        request,
-        "users/dashboard.html",
-        {"stats": stats, "recent_orders": recent_orders, "top_categories": top_categories},
-    )
+    return redirect("admin_dashboard:index")

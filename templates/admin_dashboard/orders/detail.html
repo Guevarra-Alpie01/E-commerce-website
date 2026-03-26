@@ -1,0 +1,108 @@
+{% extends "admin_dashboard/base_admin.html" %}
+
+{% block title %}Order #{{ order.id }}{% endblock %}
+{% block admin_title %}Order #{{ order.id }}{% endblock %}
+{% block admin_intro %}Review customer details, ordered items, totals, payment info, and update status from this page.{% endblock %}
+
+{% block admin_content %}
+<section class="admin-grid admin-grid--split">
+    <div class="admin-stack">
+        <div class="admin-panel">
+            <div class="admin-panel__header">
+                <div>
+                    <h2 class="h5 mb-1">Order Summary</h2>
+                    <p class="text-secondary mb-0">{{ order.created_at|date:"M d, Y H:i" }}</p>
+                </div>
+                <span class="admin-badge admin-badge--neutral">{{ order.status }}</span>
+            </div>
+
+            <div class="admin-summary-grid">
+                <article>
+                    <span>Customer</span>
+                    <strong>{{ order.full_name }}</strong>
+                </article>
+                <article>
+                    <span>Username</span>
+                    <strong>{{ order.user.username }}</strong>
+                </article>
+                <article>
+                    <span>Phone</span>
+                    <strong>{{ order.phone }}</strong>
+                </article>
+                <article>
+                    <span>Total</span>
+                    <strong>PHP {{ order.subtotal }}</strong>
+                </article>
+                <article class="admin-summary-grid__wide">
+                    <span>Shipping Address</span>
+                    <strong>{{ order.address }}</strong>
+                </article>
+            </div>
+        </div>
+
+        <div class="admin-panel">
+            <div class="admin-panel__header">
+                <div>
+                    <h2 class="h5 mb-1">Items Ordered</h2>
+                    <p class="text-secondary mb-0">Each line item linked to this order.</p>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table admin-table align-middle">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Unit Price</th>
+                            <th>Quantity</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in order.items.all %}
+                            <tr>
+                                <td>{{ item.product_name }}</td>
+                                <td>PHP {{ item.unit_price }}</td>
+                                <td>{{ item.quantity }}</td>
+                                <td>PHP {{ item.total_price }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="admin-stack">
+        <div class="admin-panel">
+            <div class="admin-panel__header">
+                <div>
+                    <h2 class="h5 mb-1">Update Order Status</h2>
+                    <p class="text-secondary mb-0">Move this order through the fulfillment flow.</p>
+                </div>
+            </div>
+            <form method="post" class="admin-form-stack">
+                {% csrf_token %}
+                <label class="form-label fw-semibold" for="{{ form.status.id_for_label }}">{{ form.status.label }}</label>
+                {{ form.status }}
+                <button type="submit" class="btn btn-success">Save Status</button>
+            </form>
+        </div>
+
+        <div class="admin-panel">
+            <div class="admin-panel__header">
+                <div>
+                    <h2 class="h5 mb-1">Payment Record</h2>
+                    <p class="text-secondary mb-0">Simulation payment linked to this order.</p>
+                </div>
+            </div>
+            <ul class="admin-detail-list">
+                <li><strong>Reference:</strong> {{ payment.reference }}</li>
+                <li><strong>Status:</strong> {{ payment.status }}</li>
+                <li><strong>Method:</strong> {{ payment.payment_method }}</li>
+                <li><strong>Amount:</strong> PHP {{ payment.amount }}</li>
+                <li><strong>Notes:</strong> {{ payment.notes|default:"No notes" }}</li>
+            </ul>
+        </div>
+    </div>
+</section>
+{% endblock %}

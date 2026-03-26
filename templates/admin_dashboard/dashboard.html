@@ -1,0 +1,137 @@
+{% extends "admin_dashboard/base_admin.html" %}
+
+{% block title %}Admin Dashboard{% endblock %}
+{% block admin_title %}Dashboard Overview{% endblock %}
+{% block admin_intro %}Track the health of users, products, orders, revenue, payments, and reviews from one screen.{% endblock %}
+
+{% block admin_content %}
+<section class="admin-stats-grid">
+    <article class="admin-stat-card">
+        <span>Total Users</span>
+        <strong>{{ stats.total_users }}</strong>
+    </article>
+    <article class="admin-stat-card">
+        <span>Total Products</span>
+        <strong>{{ stats.total_products }}</strong>
+    </article>
+    <article class="admin-stat-card">
+        <span>Total Orders</span>
+        <strong>{{ stats.total_orders }}</strong>
+    </article>
+    <article class="admin-stat-card">
+        <span>Total Revenue</span>
+        <strong>PHP {{ stats.total_revenue }}</strong>
+    </article>
+</section>
+
+<section class="admin-grid admin-grid--primary">
+    <div class="admin-panel">
+        <div class="admin-panel__header">
+            <div>
+                <h2 class="h5 mb-1">Recent Orders</h2>
+                <p class="text-secondary mb-0">Latest customer activity.</p>
+            </div>
+            <a class="btn btn-outline-success" href="{% url 'admin_dashboard:order_list' %}">All Orders</a>
+        </div>
+        <div class="table-responsive">
+            <table class="table admin-table align-middle">
+                <thead>
+                    <tr>
+                        <th>Order</th>
+                        <th>User</th>
+                        <th>Status</th>
+                        <th>Total</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in recent_orders %}
+                        <tr>
+                            <td><a href="{% url 'admin_dashboard:order_detail' order.id %}">#{{ order.id }}</a></td>
+                            <td>{{ order.user.username }}</td>
+                            <td><span class="admin-status admin-status--neutral">{{ order.status }}</span></td>
+                            <td>PHP {{ order.subtotal }}</td>
+                            <td>{{ order.created_at|date:"M d, Y H:i" }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center text-secondary py-4">No orders yet.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="admin-stack">
+        <div class="admin-panel">
+            <div class="admin-panel__header">
+                <div>
+                    <h2 class="h5 mb-1">Low Stock Products</h2>
+                    <p class="text-secondary mb-0">Products that may need restocking soon.</p>
+                </div>
+                <a class="btn btn-outline-success" href="{% url 'admin_dashboard:product_list' %}">Manage Products</a>
+            </div>
+            <ul class="admin-list">
+                {% for product in low_stock_products %}
+                    <li>
+                        <div>
+                            <strong>{{ product.name }}</strong>
+                            <small>{{ product.category.name }}</small>
+                        </div>
+                        <span class="admin-badge admin-badge--warning">{{ product.stock }} left</span>
+                    </li>
+                {% empty %}
+                    <li class="text-secondary">No low stock alerts right now.</li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <div class="admin-panel">
+            <div class="admin-panel__header">
+                <div>
+                    <h2 class="h5 mb-1">Pending Payments</h2>
+                    <p class="text-secondary mb-0">Payment records waiting for completion.</p>
+                </div>
+                <a class="btn btn-outline-success" href="{% url 'admin_dashboard:payment_list' %}">All Payments</a>
+            </div>
+            <ul class="admin-list">
+                {% for payment in pending_payments %}
+                    <li>
+                        <div>
+                            <strong>{{ payment.reference }}</strong>
+                            <small>Order #{{ payment.order_id }} · {{ payment.user.username }}</small>
+                        </div>
+                        <span class="admin-badge admin-badge--neutral">PHP {{ payment.amount }}</span>
+                    </li>
+                {% empty %}
+                    <li class="text-secondary">No pending payments.</li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <div class="admin-panel">
+            <div class="admin-panel__header">
+                <div>
+                    <h2 class="h5 mb-1">Latest Reviews</h2>
+                    <p class="text-secondary mb-0">Recent feedback left by customers.</p>
+                </div>
+                <a class="btn btn-outline-success" href="{% url 'admin_dashboard:review_list' %}">All Reviews</a>
+            </div>
+            <ul class="admin-list">
+                {% for review in latest_reviews %}
+                    <li>
+                        <div>
+                            <strong>{{ review.product.name }}</strong>
+                            <small>{{ review.user.username }} · {{ review.rating }}/5</small>
+                        </div>
+                        <span class="text-secondary">{{ review.created_at|date:"M d" }}</span>
+                    </li>
+                {% empty %}
+                    <li class="text-secondary">No reviews yet.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,77 @@
+{% extends "admin_dashboard/base_admin.html" %}
+
+{% block title %}Manage Users{% endblock %}
+{% block admin_title %}User Management{% endblock %}
+{% block admin_intro %}Search accounts, check order activity, and activate or deactivate store users.{% endblock %}
+
+{% block admin_content %}
+<section class="admin-panel">
+    <form method="get" class="admin-toolbar">
+        <div class="admin-toolbar__search">
+            <input type="text" name="q" class="form-control" value="{{ query }}" placeholder="Search by username or email">
+        </div>
+        <button type="submit" class="btn btn-success">Search</button>
+    </form>
+
+    <div class="table-responsive">
+        <table class="table admin-table align-middle">
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Email</th>
+                    <th>Orders</th>
+                    <th>Status</th>
+                    <th>Role</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in page_obj %}
+                    <tr>
+                        <td>
+                            <strong>{{ user.username }}</strong><br>
+                            <small class="text-secondary">{{ user.get_full_name|default:"No full name" }}</small>
+                        </td>
+                        <td>{{ user.email|default:"No email" }}</td>
+                        <td>{{ user.order_count }}</td>
+                        <td>
+                            {% if user.is_active %}
+                                <span class="admin-badge admin-badge--success">Active</span>
+                            {% else %}
+                                <span class="admin-badge admin-badge--danger">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if user.is_superuser %}
+                                Superuser
+                            {% elif user.is_staff %}
+                                Staff
+                            {% else %}
+                                Customer
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <div class="admin-actions">
+                                <a class="btn btn-outline-success" href="{% url 'admin_dashboard:user_detail' user.id %}">View</a>
+                                <form method="post" action="{% url 'admin_dashboard:user_toggle_active' user.id %}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="next" value="{% url 'admin_dashboard:user_list' %}">
+                                    <button type="submit" class="btn {% if user.is_active %}btn-outline-danger{% else %}btn-success{% endif %}">
+                                        {% if user.is_active %}Deactivate{% else %}Activate{% endif %}
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center text-secondary py-4">No users matched your search.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% include "admin_dashboard/includes/pagination.html" with page_obj=page_obj querystring=querystring %}
+</section>
+{% endblock %}

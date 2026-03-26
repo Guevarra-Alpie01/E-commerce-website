@@ -1,0 +1,22 @@
+{% extends "admin_dashboard/base_admin.html" %}
+
+{% block title %}Delete Product{% endblock %}
+{% block admin_title %}Delete Product{% endblock %}
+{% block admin_intro %}Review the product details before removing it from the catalog.{% endblock %}
+
+{% block admin_content %}
+<section class="admin-panel admin-panel--narrow">
+    <h2 class="h4 mb-3">Delete {{ product.name }}?</h2>
+    <p class="text-secondary">This action will permanently remove the product from the catalog management interface.</p>
+    <ul class="admin-detail-list">
+        <li><strong>Category:</strong> {{ product.category.name }}</li>
+        <li><strong>Price:</strong> PHP {{ product.price }}</li>
+        <li><strong>Stock:</strong> {{ product.stock }}</li>
+    </ul>
+    <form method="post" class="admin-actions mt-4">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Delete Product</button>
+        <a class="btn btn-outline-success" href="{% url 'admin_dashboard:product_list' %}">Cancel</a>
+    </form>
+</section>
+{% endblock %}

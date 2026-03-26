@@ -1,0 +1,31 @@
+{% extends "admin_dashboard/base_admin.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+{% block admin_title %}{{ title }}{% endblock %}
+{% block admin_intro %}Use the product form below to manage catalog entries, pricing, stock, and images.{% endblock %}
+
+{% block admin_content %}
+<section class="admin-panel admin-panel--narrow">
+    <form method="post" enctype="multipart/form-data" class="admin-form-stack">
+        {% csrf_token %}
+        <div class="row g-3">
+            {% for field in form %}
+                <div class="col-12 {% if field.name != 'description' and field.name != 'image' %}col-md-6{% endif %}">
+                    <label class="form-label fw-semibold" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.help_text %}
+                        <small class="text-secondary d-block mt-1">{{ field.help_text }}</small>
+                    {% endif %}
+                    {% for error in field.errors %}
+                        <small class="text-danger d-block mt-1">{{ error }}</small>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+        </div>
+        <div class="admin-actions mt-3">
+            <button type="submit" class="btn btn-success">{{ submit_label }}</button>
+            <a class="btn btn-outline-success" href="{% url 'admin_dashboard:product_list' %}">Cancel</a>
+        </div>
+    </form>
+</section>
+{% endblock %}

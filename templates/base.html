@@ -35,8 +35,7 @@
                         <a class="site-link-pill" href="{% url 'users:profile' %}">Profile</a>
                         <a class="site-link-pill" href="{% url 'orders:order_history' %}">Orders</a>
                         {% if request.user.is_staff %}
-                            <a class="site-link-pill" href="{% url 'users:dashboard' %}">Dashboard</a>
-                            <a class="site-link-pill" href="{% url 'admin:index' %}">Admin</a>
+                            <a class="site-link-pill" href="{% url 'admin_dashboard:index' %}">Admin Dashboard</a>
                         {% endif %}
                         <form action="{% url 'logout' %}" method="post" class="d-inline">
                             {% csrf_token %}

@@ -1,3 +1,5 @@
+from uuid import uuid4
+
 from django.conf import settings
 from django.db import models
 
@@ -8,6 +10,7 @@ class Order(models.Model):
     class Status(models.TextChoices):
         PENDING = "Pending", "Pending"
         PROCESSING = "Processing", "Processing"
+        SHIPPED = "Shipped", "Shipped"
         DELIVERED = "Delivered", "Delivered"
 
     class PaymentMethod(models.TextChoices):
@@ -44,6 +47,44 @@ class Order(models.Model):
     @property
     def item_count(self):
         return sum(item.quantity for item in self.items.all())
+
+
+def generate_payment_reference():
+    return f"PAY-{uuid4().hex[:10].upper()}"
+
+
+class Payment(models.Model):
+    class Status(models.TextChoices):
+        PENDING = "Pending", "Pending"
+        COMPLETED = "Completed", "Completed"
+
+    order = models.OneToOneField(Order, on_delete=models.CASCADE, related_name="payment")
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="payments",
+    )
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    payment_method = models.CharField(
+        max_length=30,
+        choices=Order.PaymentMethod.choices,
+        default=Order.PaymentMethod.COD,
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.PENDING,
+    )
+    reference = models.CharField(max_length=20, unique=True, default=generate_payment_reference)
+    notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"Payment {self.reference} for Order #{self.order_id}"
 
 
 class OrderItem(models.Model):

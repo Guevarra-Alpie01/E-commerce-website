@@ -1,0 +1,404 @@
+from django.contrib import messages
+from django.contrib.auth import login, logout
+from django.contrib.auth.models import User
+from django.core.paginator import Paginator
+from django.db.models import Count, DecimalField, Q, Sum
+from django.db.models.functions import Coalesce
+from django.shortcuts import get_object_or_404, redirect, render
+from django.utils.http import url_has_allowed_host_and_scheme
+from django.views.decorators.http import require_POST
+
+from orders.models import Order, Payment
+from products.models import Product
+from reviews.models import Review
+
+from .admin_access import admin_required, is_admin_user
+from .admin_forms import (
+    AdminAuthenticationForm,
+    AdminOrderStatusForm,
+    AdminPaymentStatusForm,
+    AdminProductForm,
+    AdminUserForm,
+)
+from .models import UserProfile
+
+
+def paginate_queryset(request, queryset, per_page=10):
+    paginator = Paginator(queryset, per_page)
+    return paginator.get_page(request.GET.get("page"))
+
+
+def querystring_without_page(request):
+    params = request.GET.copy()
+    params.pop("page", None)
+    return params.urlencode()
+
+
+def resolve_next_url(request):
+    next_url = request.POST.get("next") or request.GET.get("next")
+    if next_url and url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
+        return next_url
+    return None
+
+
+def ensure_payment(order):
+    payment, _ = Payment.objects.get_or_create(
+        order=order,
+        defaults={
+            "user": order.user,
+            "amount": order.subtotal,
+            "payment_method": order.payment_method,
+            "status": Payment.Status.PENDING,
+        },
+    )
+    return payment
+
+
+def admin_login(request):
+    if is_admin_user(request.user):
+        return redirect("admin_dashboard:index")
+
+    form = AdminAuthenticationForm(request, data=request.POST or None)
+    next_url = resolve_next_url(request)
+
+    if request.method == "POST" and form.is_valid():
+        user = form.get_user()
+        if not is_admin_user(user):
+            messages.error(request, "This account does not have admin dashboard access.")
+        else:
+            login(request, user)
+            messages.success(request, f"Welcome back, {user.get_username()}.")
+            return redirect(next_url or "admin_dashboard:index")
+
+    return render(
+        request,
+        "admin_dashboard/login.html",
+        {"form": form, "next_url": next_url},
+    )
+
+
+@require_POST
+@admin_required
+def admin_logout(request):
+    logout(request)
+    messages.info(request, "You have been signed out of the admin dashboard.")
+    return redirect("admin_dashboard:login")
+
+
+@admin_required
+def dashboard(request):
+    stats = {
+        "total_users": User.objects.count(),
+        "total_products": Product.objects.count(),
+        "total_orders": Order.objects.count(),
+        "total_revenue": Order.objects.aggregate(
+            total=Coalesce(Sum("subtotal"), 0, output_field=DecimalField(max_digits=10, decimal_places=2))
+        )["total"],
+    }
+    recent_orders = Order.objects.select_related("user").prefetch_related("items").order_by("-created_at")[:8]
+    low_stock_products = Product.objects.select_related("category").filter(stock__lte=5).order_by("stock", "name")[:6]
+    pending_payments = Payment.objects.select_related("order", "user").filter(status=Payment.Status.PENDING)[:5]
+    latest_reviews = Review.objects.select_related("product", "user")[:5]
+    return render(
+        request,
+        "admin_dashboard/dashboard.html",
+        {
+            "stats": stats,
+            "recent_orders": recent_orders,
+            "low_stock_products": low_stock_products,
+            "pending_payments": pending_payments,
+            "latest_reviews": latest_reviews,
+            "section": "dashboard",
+        },
+    )
+
+
+@admin_required
+def user_list(request):
+    query = request.GET.get("q", "").strip()
+    users = User.objects.select_related("profile").annotate(order_count=Count("orders", distinct=True)).order_by("-date_joined")
+
+    if query:
+        users = users.filter(Q(username__icontains=query) | Q(email__icontains=query))
+
+    page_obj = paginate_queryset(request, users, per_page=12)
+    return render(
+        request,
+        "admin_dashboard/users/list.html",
+        {"page_obj": page_obj, "query": query, "querystring": querystring_without_page(request), "section": "users"},
+    )
+
+
+@admin_required
+def user_detail(request, user_id):
+    user_obj = get_object_or_404(User, pk=user_id)
+    profile, _ = UserProfile.objects.get_or_create(user=user_obj)
+
+    if request.method == "POST":
+        form = AdminUserForm(request.POST, instance=user_obj)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f"{user_obj.username} has been updated.")
+            return redirect("admin_dashboard:user_detail", user_id=user_obj.id)
+    else:
+        form = AdminUserForm(instance=user_obj)
+
+    user_orders = user_obj.orders.prefetch_related("items").order_by("-created_at")
+    user_reviews = user_obj.reviews.select_related("product").order_by("-created_at")[:8]
+    return render(
+        request,
+        "admin_dashboard/users/detail.html",
+        {
+            "managed_user": user_obj,
+            "profile": profile,
+            "form": form,
+            "user_orders": user_orders,
+            "user_reviews": user_reviews,
+            "section": "users",
+        },
+    )
+
+
+@require_POST
+@admin_required
+def user_toggle_active(request, user_id):
+    user_obj = get_object_or_404(User, pk=user_id)
+
+    if user_obj == request.user and user_obj.is_active:
+        messages.error(request, "You cannot deactivate your own admin account.")
+        return redirect("admin_dashboard:user_detail", user_id=user_obj.id)
+
+    user_obj.is_active = not user_obj.is_active
+    user_obj.save(update_fields=["is_active"])
+    messages.success(
+        request,
+        f"{user_obj.username} is now {'active' if user_obj.is_active else 'inactive'}.",
+    )
+    return redirect(request.POST.get("next") or "admin_dashboard:user_list")
+
+
+@admin_required
+def product_list(request):
+    query = request.GET.get("q", "").strip()
+    products = Product.objects.select_related("category").order_by("name")
+
+    if query:
+        products = products.filter(
+            Q(name__icontains=query) | Q(description__icontains=query) | Q(category__name__icontains=query)
+        )
+
+    page_obj = paginate_queryset(request, products, per_page=12)
+    return render(
+        request,
+        "admin_dashboard/products/list.html",
+        {
+            "page_obj": page_obj,
+            "query": query,
+            "querystring": querystring_without_page(request),
+            "section": "products",
+            "low_stock_threshold": 5,
+        },
+    )
+
+
+@admin_required
+def product_create(request):
+    if request.method == "POST":
+        form = AdminProductForm(request.POST, request.FILES)
+        if form.is_valid():
+            product = form.save()
+            messages.success(request, f"{product.name} has been added.")
+            return redirect("admin_dashboard:product_list")
+    else:
+        form = AdminProductForm()
+
+    return render(
+        request,
+        "admin_dashboard/products/form.html",
+        {"form": form, "title": "Add product", "submit_label": "Create product", "section": "products"},
+    )
+
+
+@admin_required
+def product_edit(request, product_id):
+    product = get_object_or_404(Product.objects.select_related("category"), pk=product_id)
+
+    if request.method == "POST":
+        form = AdminProductForm(request.POST, request.FILES, instance=product)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f"{product.name} has been updated.")
+            return redirect("admin_dashboard:product_list")
+    else:
+        form = AdminProductForm(instance=product)
+
+    return render(
+        request,
+        "admin_dashboard/products/form.html",
+        {"form": form, "title": f"Edit {product.name}", "submit_label": "Save changes", "section": "products"},
+    )
+
+
+@admin_required
+def product_delete(request, product_id):
+    product = get_object_or_404(Product, pk=product_id)
+
+    if request.method == "POST":
+        product_name = product.name
+        product.delete()
+        messages.success(request, f"{product_name} has been deleted.")
+        return redirect("admin_dashboard:product_list")
+
+    return render(
+        request,
+        "admin_dashboard/products/confirm_delete.html",
+        {"product": product, "section": "products"},
+    )
+
+
+@admin_required
+def order_list(request):
+    status_filter = request.GET.get("status", "").strip()
+    query = request.GET.get("q", "").strip()
+    orders = Order.objects.select_related("user", "payment").prefetch_related("items").order_by("-created_at")
+
+    if status_filter:
+        orders = orders.filter(status=status_filter)
+
+    if query:
+        query_filter = Q(user__username__icontains=query) | Q(full_name__icontains=query)
+        if query.isdigit():
+            query_filter |= Q(pk=int(query))
+        orders = orders.filter(query_filter)
+
+    page_obj = paginate_queryset(request, orders, per_page=12)
+    return render(
+        request,
+        "admin_dashboard/orders/list.html",
+        {
+            "page_obj": page_obj,
+            "status_filter": status_filter,
+            "query": query,
+            "querystring": querystring_without_page(request),
+            "status_choices": Order.Status.choices,
+            "section": "orders",
+        },
+    )
+
+
+@admin_required
+def order_detail(request, order_id):
+    order = get_object_or_404(
+        Order.objects.select_related("user").prefetch_related("items__product"),
+        pk=order_id,
+    )
+    payment = ensure_payment(order)
+
+    if request.method == "POST":
+        form = AdminOrderStatusForm(request.POST, instance=order)
+        if form.is_valid():
+            form.save()
+            if order.status == Order.Status.DELIVERED and payment.status != Payment.Status.COMPLETED:
+                payment.status = Payment.Status.COMPLETED
+                payment.notes = (payment.notes + "\n" if payment.notes else "") + "Marked completed when order was delivered."
+                payment.save(update_fields=["status", "notes", "updated_at"])
+            messages.success(request, f"Order #{order.pk} status updated to {order.status}.")
+            return redirect("admin_dashboard:order_detail", order_id=order.pk)
+    else:
+        form = AdminOrderStatusForm(instance=order)
+
+    return render(
+        request,
+        "admin_dashboard/orders/detail.html",
+        {
+            "order": order,
+            "payment": payment,
+            "form": form,
+            "section": "orders",
+        },
+    )
+
+
+@admin_required
+def payment_list(request):
+    status_filter = request.GET.get("status", "").strip()
+    query = request.GET.get("q", "").strip()
+    payments = Payment.objects.select_related("order", "user").order_by("-created_at")
+
+    if status_filter:
+        payments = payments.filter(status=status_filter)
+
+    if query:
+        query_filter = Q(reference__icontains=query) | Q(user__username__icontains=query) | Q(order__full_name__icontains=query)
+        if query.isdigit():
+            query_filter |= Q(order_id=int(query))
+        payments = payments.filter(query_filter)
+
+    page_obj = paginate_queryset(request, payments, per_page=12)
+    return render(
+        request,
+        "admin_dashboard/payments/list.html",
+        {
+            "page_obj": page_obj,
+            "status_filter": status_filter,
+            "query": query,
+            "querystring": querystring_without_page(request),
+            "status_choices": Payment.Status.choices,
+            "payment_form": AdminPaymentStatusForm(),
+            "section": "payments",
+        },
+    )
+
+
+@require_POST
+@admin_required
+def payment_update_status(request, payment_id):
+    payment = get_object_or_404(Payment, pk=payment_id)
+    form = AdminPaymentStatusForm(request.POST, instance=payment)
+
+    if form.is_valid():
+        form.save()
+        messages.success(request, f"Payment {payment.reference} updated to {payment.status}.")
+    else:
+        messages.error(request, "Could not update the payment status. Please check the form and try again.")
+
+    return redirect("admin_dashboard:payment_list")
+
+
+@admin_required
+def review_list(request):
+    rating_filter = request.GET.get("rating", "").strip()
+    query = request.GET.get("q", "").strip()
+    reviews = Review.objects.select_related("user", "product").order_by("-created_at")
+
+    if rating_filter:
+        reviews = reviews.filter(rating=rating_filter)
+
+    if query:
+        reviews = reviews.filter(
+            Q(comment__icontains=query) | Q(product__name__icontains=query) | Q(user__username__icontains=query)
+        )
+
+    page_obj = paginate_queryset(request, reviews, per_page=12)
+    return render(
+        request,
+        "admin_dashboard/reviews/list.html",
+        {
+            "page_obj": page_obj,
+            "rating_filter": rating_filter,
+            "query": query,
+            "querystring": querystring_without_page(request),
+            "ratings": Review.RATING_CHOICES,
+            "section": "reviews",
+        },
+    )
+
+
+@require_POST
+@admin_required
+def review_delete(request, review_id):
+    review = get_object_or_404(Review, pk=review_id)
+    product_name = review.product.name
+    review.delete()
+    messages.success(request, f"The review for {product_name} has been deleted.")
+    return redirect("admin_dashboard:review_list")
