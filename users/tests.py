@@ -80,6 +80,13 @@ class CustomAdminDashboardTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Dashboard Overview")
 
+    def test_staff_user_is_redirected_away_from_storefront(self):
+        self.client.login(username="manager", password="secret12345")
+
+        response = self.client.get(reverse("products:product_list"))
+
+        self.assertRedirects(response, reverse("admin_dashboard:index"))
+
     def test_normal_user_is_redirected_from_admin_dashboard(self):
         self.client.login(username="shopper", password="secret12345")
 
