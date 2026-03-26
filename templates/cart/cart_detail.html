@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}Cart | Django Store{% endblock %}
+
+{% block content %}
+<section class="page-hero">
+    <div>
+        <p class="eyebrow">Shopping cart</p>
+        <h1>Review your items</h1>
+        <p>Adjust quantities, remove products, and continue to checkout when everything looks right.</p>
+    </div>
+    <a class="btn btn-secondary" href="{% url 'products:product_list' %}">Continue shopping</a>
+</section>
+
+{% if cart_items %}
+    <section class="grid cart-layout">
+        <div class="card">
+            <div class="cart-table">
+                {% for item in cart_items %}
+                    <article class="cart-row">
+                        <div class="cart-product">
+                            {% if item.product.image %}
+                                <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}">
+                            {% else %}
+                                <div class="image-placeholder thumb">No image</div>
+                            {% endif %}
+                            <div>
+                                <h2><a href="{% url 'products:product_detail' item.product.slug %}">{{ item.product.name }}</a></h2>
+                                <p class="muted-copy">{{ item.product.category.name }}</p>
+                                <p class="price">PHP {{ item.price }}</p>
+                            </div>
+                        </div>
+                        <div class="cart-controls">
+                            <form action="{% url 'cart:cart_update' item.product.id %}" method="post" class="qty-form">
+                                {% csrf_token %}
+                                {{ item.update_form.quantity }}
+                                {{ item.update_form.override }}
+                                <button type="submit" class="btn btn-secondary">Update</button>
+                            </form>
+                            <p class="price">PHP {{ item.total_price }}</p>
+                            <form action="{% url 'cart:cart_remove' item.product.id %}" method="post">
+                                {% csrf_token %}
+                                <button type="submit" class="link-button danger-link">Remove</button>
+                            </form>
+                        </div>
+                    </article>
+                {% endfor %}
+            </div>
+        </div>
+
+        <aside class="card summary-card">
+            <h2>Cart summary</h2>
+            <div class="summary-line">
+                <span>Items</span>
+                <strong>{{ cart|length }}</strong>
+            </div>
+            <div class="summary-line">
+                <span>Subtotal</span>
+                <strong>PHP {{ cart.get_subtotal_price }}</strong>
+            </div>
+            {% if request.user.is_authenticated %}
+                <a class="btn btn-primary btn-block" href="{% url 'orders:checkout' %}">Proceed to checkout</a>
+            {% else %}
+                <p class="muted-copy">Log in before checking out.</p>
+                <a class="btn btn-primary btn-block" href="{% url 'login' %}?next={% url 'orders:checkout' %}">Login to checkout</a>
+            {% endif %}
+        </aside>
+    </section>
+{% else %}
+    <section class="card">
+        <h2>Your cart is empty</h2>
+        <p class="empty-state">Add a few products to get started.</p>
+    </section>
+{% endif %}
+{% endblock %}

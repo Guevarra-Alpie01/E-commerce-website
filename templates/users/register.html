@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}Register | Django Store{% endblock %}
+
+{% block content %}
+<section class="auth-shell">
+    <div class="card form-card">
+        <div class="section-heading">
+            <p class="eyebrow">New customer</p>
+            <h1>Create your account</h1>
+            <p>Register once, then you can place orders, track deliveries, and leave product reviews.</p>
+        </div>
+        <form method="post" class="stack-form">
+            {% csrf_token %}
+            {% for field in form %}
+                <div class="field-group">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.help_text %}
+                        <small class="help-text">{{ field.help_text }}</small>
+                    {% endif %}
+                    {% for error in field.errors %}
+                        <p class="field-error">{{ error }}</p>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+            {% if form.non_field_errors %}
+                {% for error in form.non_field_errors %}
+                    <p class="field-error">{{ error }}</p>
+                {% endfor %}
+            {% endif %}
+            <button type="submit" class="btn btn-primary btn-block">Create account</button>
+        </form>
+    </div>
+</section>
+{% endblock %}

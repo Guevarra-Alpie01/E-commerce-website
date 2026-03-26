@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}Order #{{ order.id }} | Django Store{% endblock %}
+
+{% block content %}
+<section class="page-hero">
+    <div>
+        <p class="eyebrow">Order details</p>
+        <h1>Order #{{ order.id }}</h1>
+        <p>Placed on {{ order.created_at|date:"M d, Y H:i" }} | Status: <strong>{{ order.status }}</strong></p>
+    </div>
+    <a class="btn btn-secondary" href="{% url 'orders:order_history' %}">Back to history</a>
+</section>
+
+<section class="grid two-up">
+    <article class="card">
+        <h2>Delivery information</h2>
+        <p><strong>Name:</strong> {{ order.full_name }}</p>
+        <p><strong>Phone:</strong> {{ order.phone }}</p>
+        <p><strong>Address:</strong> {{ order.address|linebreaksbr }}</p>
+        <p><strong>Payment:</strong> {{ order.payment_method }}</p>
+    </article>
+
+    <article class="card">
+        <h2>Items ordered</h2>
+        <div class="summary-items">
+            {% for item in order.items.all %}
+                <div class="summary-line">
+                    <span>{{ item.product_name }} x {{ item.quantity }}</span>
+                    <strong>PHP {{ item.total_price }}</strong>
+                </div>
+            {% endfor %}
+        </div>
+        <div class="summary-line total">
+            <span>Total</span>
+            <strong>PHP {{ order.subtotal }}</strong>
+        </div>
+    </article>
+</section>
+{% endblock %}

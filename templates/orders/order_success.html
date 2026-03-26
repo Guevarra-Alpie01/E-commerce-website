@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block title %}Order Placed | Django Store{% endblock %}
+
+{% block content %}
+<section class="card success-card">
+    <p class="eyebrow">Order placed</p>
+    <h1>Thanks for your purchase</h1>
+    <p>Your order <strong>#{{ order.id }}</strong> has been recorded with a current status of <strong>{{ order.status }}</strong>.</p>
+    <p>Payment method: {{ order.payment_method }}</p>
+    <div class="action-row">
+        <a class="btn btn-primary" href="{% url 'orders:order_detail' order.id %}">View order details</a>
+        <a class="btn btn-secondary" href="{% url 'products:product_list' %}">Continue shopping</a>
+    </div>
+</section>
+{% endblock %}

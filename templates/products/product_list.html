@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}Products | Django Store{% endblock %}
+
+{% block content %}
+<section class="page-hero">
+    <div>
+        <p class="eyebrow">Catalog</p>
+        <h1>Find your next favorite item</h1>
+        <p>Browse the full product catalog, search by keyword, or narrow the list by category.</p>
+    </div>
+    <div class="hero-meta">
+        <span class="meta-chip">{{ page_obj.paginator.count }} product{{ page_obj.paginator.count|pluralize }}</span>
+        {% if selected_category %}
+            <span class="meta-chip">Category: {{ selected_category.name }}</span>
+        {% endif %}
+        {% if query %}
+            <span class="meta-chip">Search: "{{ query }}"</span>
+        {% endif %}
+    </div>
+</section>
+
+<section class="catalog-layout">
+    <aside class="card sidebar-card">
+        <h2>Categories</h2>
+        <div class="category-list">
+            <a class="category-pill {% if not selected_category %}active{% endif %}" href="{% url 'products:product_list' %}{% if query %}?q={{ query|urlencode }}{% endif %}">
+                All
+            </a>
+            {% for category in categories %}
+                <a
+                    class="category-pill {% if selected_category and selected_category.id == category.id %}active{% endif %}"
+                    href="{% url 'products:product_list' %}?category={{ category.slug }}{% if query %}&q={{ query|urlencode }}{% endif %}"
+                >
+                    {{ category.name }}
+                </a>
+            {% endfor %}
+        </div>
+    </aside>
+
+    <div class="product-grid">
+        {% for product in page_obj %}
+            <article class="product-card">
+                <a class="product-media" href="{% url 'products:product_detail' product.slug %}">
+                    {% if product.image %}
+                        <img src="{{ product.image.url }}" alt="{{ product.name }}">
+                    {% else %}
+                        <div class="image-placeholder">No image</div>
+                    {% endif %}
+                </a>
+                <div class="product-body">
+                    <p class="product-category">{{ product.category.name }}</p>
+                    <h2><a href="{% url 'products:product_detail' product.slug %}">{{ product.name }}</a></h2>
+                    <p class="product-copy">{{ product.description|truncatewords:18 }}</p>
+                    <div class="product-meta">
+                        <p class="price">PHP {{ product.price }}</p>
+                        <p class="rating-copy">{{ product.avg_rating|default:0|floatformat:1 }}/5 ({{ product.review_total }})</p>
+                    </div>
+                    <div class="product-actions">
+                        <span class="stock-copy {% if product.stock > 0 %}in-stock{% else %}out-of-stock{% endif %}">
+                            {% if product.stock > 0 %}{{ product.stock }} in stock{% else %}Out of stock{% endif %}
+                        </span>
+                        <form action="{% url 'cart:cart_add' product.id %}" method="post" class="inline-form">
+                            {% csrf_token %}
+                            <input type="hidden" name="quantity" value="1">
+                            <input type="hidden" name="override" value="">
+                            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                            <button type="submit" class="btn btn-primary" {% if product.stock == 0 %}disabled{% endif %}>
+                                Add to cart
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </article>
+        {% empty %}
+            <article class="card">
+                <h2>No products found</h2>
+                <p class="empty-state">Try a different search term or clear the category filter.</p>
+            </article>
+        {% endfor %}
+    </div>
+</section>
+
+{% if page_obj.paginator.num_pages > 1 %}
+    <nav class="pagination">
+        {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query|urlencode }}{% endif %}{% if selected_category %}&category={{ selected_category.slug }}{% endif %}">Previous</a>
+        {% endif %}
+        <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query|urlencode }}{% endif %}{% if selected_category %}&category={{ selected_category.slug }}{% endif %}">Next</a>
+        {% endif %}
+    </nav>
+{% endif %}
+{% endblock %}

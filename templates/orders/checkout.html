@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}Checkout | Django Store{% endblock %}
+
+{% block content %}
+<section class="page-hero">
+    <div>
+        <p class="eyebrow">Checkout</p>
+        <h1>Place your order</h1>
+        <p>Cash on Delivery is the only payment option in this PythonAnywhere-friendly demo.</p>
+    </div>
+</section>
+
+<section class="grid checkout-layout">
+    <article class="card">
+        <h2>Delivery details</h2>
+        <form method="post" class="stack-form">
+            {% csrf_token %}
+            {% for field in form %}
+                <div class="field-group">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% for error in field.errors %}
+                        <p class="field-error">{{ error }}</p>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+            <button type="submit" class="btn btn-primary btn-block">Confirm order</button>
+        </form>
+    </article>
+
+    <aside class="card summary-card">
+        <h2>Order summary</h2>
+        <div class="summary-items">
+            {% for item in cart_items %}
+                <div class="summary-line">
+                    <span>{{ item.product.name }} x {{ item.quantity }}</span>
+                    <strong>PHP {{ item.total_price }}</strong>
+                </div>
+            {% endfor %}
+        </div>
+        <div class="summary-line total">
+            <span>Total</span>
+            <strong>PHP {{ cart.get_subtotal_price }}</strong>
+        </div>
+    </aside>
+</section>
+{% endblock %}
