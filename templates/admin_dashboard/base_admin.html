@@ -41,7 +41,7 @@
                     <p class="admin-topbar__copy">{% block admin_intro %}Manage the storefront from one secure place.{% endblock %}</p>
                 </div>
                 <div class="admin-topbar__actions">
-                    <a class="btn btn-outline-success" href="{% url 'products:product_list' %}">View Store</a>
+                    <a class="btn btn-outline-success" href="{% url 'admin_dashboard:product_list' %}">Manage Products</a>
                     <form action="{% url 'admin_dashboard:logout' %}" method="post" class="d-inline">
                         {% csrf_token %}
                         <button type="submit" class="btn btn-success">Logout</button>

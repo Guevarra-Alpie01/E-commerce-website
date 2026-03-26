@@ -20,7 +20,7 @@
 
 {% block nav-global %}
     <div class="lj-admin-links">
-        <a href="{% url 'products:product_list' %}">View storefront</a>
-        <a href="{% url 'users:dashboard' %}">Staff dashboard</a>
+        <a href="{% url 'admin_dashboard:product_list' %}">Manage products</a>
+        <a href="{% url 'admin_dashboard:index' %}">Custom admin dashboard</a>
     </div>
 {% endblock %}
