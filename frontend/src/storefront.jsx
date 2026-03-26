@@ -5,6 +5,24 @@ const currencyFormatter = new Intl.NumberFormat("en-PH", {
   currency: "PHP",
 });
 
+const promoNotes = [
+  {
+    label: "Picked this week",
+    title: "Bright market arrivals",
+    copy: "Soft cards, playful greens, and cleaner spacing make the catalog feel lighter to browse.",
+  },
+  {
+    label: "Weekend stock-up",
+    title: "Colorful pantry staples",
+    copy: "Live product imagery now does the heavy lifting, so the page feels fresh without losing utility.",
+  },
+  {
+    label: "Neighborhood favorite",
+    title: "Easy add-to-cart flow",
+    copy: "Rounded edges and clear calls to action keep shopping warm, simple, and easy to trust.",
+  },
+];
+
 function getCookie(name) {
   const cookies = document.cookie ? document.cookie.split(";") : [];
   for (const cookie of cookies) {
@@ -58,127 +76,369 @@ function syncBrowserUrl(search, category, page) {
   window.history.replaceState({}, "", url);
 }
 
-function HeroCard({ selectedCategoryName, productCount, cartSubtotal }) {
+function getInitials(text) {
   return (
-    <section className="lj-hero card border-0 shadow-sm mb-4">
-      <div className="card-body p-4 p-lg-5">
-        <div className="row align-items-center g-4">
-          <div className="col-lg-8">
-            <span className="badge text-bg-warning text-uppercase mb-3 px-3 py-2 rounded-pill">
-              Lola Josie Tindahan
-            </span>
-            <h1 className="display-6 fw-bold mb-3">A neighborhood store, now online.</h1>
-            <p className="lead text-secondary mb-0">
-              Browse pantry picks, home finds, and everyday favorites with a warm, Bootstrap-powered storefront
-              backed by Django REST and React.
-            </p>
+    text
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase() || "")
+      .join("") || "FM"
+  );
+}
+
+function truncateWords(text, limit = 16) {
+  const words = (text || "").trim().split(/\s+/).filter(Boolean);
+  if (!words.length) {
+    return "Fresh, thoughtful essentials for everyday homes.";
+  }
+  if (words.length <= limit) {
+    return words.join(" ");
+  }
+  return `${words.slice(0, limit).join(" ")}...`;
+}
+
+function VisualTile({ product, className, label }) {
+  return (
+    <div className={`hero-fruit ${className}`}>
+      {product?.image_url ? (
+        <img src={product.image_url} alt={product.name} className="hero-fruit__image" />
+      ) : (
+        <div className="hero-fruit__fallback">
+          <span className="hero-fruit__fallback-mark">{getInitials(label)}</span>
+          <span className="hero-fruit__fallback-label">{label}</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function HeroVisual({ products }) {
+  const [primary, secondary, tertiary] = products;
+
+  return (
+    <div className="market-hero__visual" aria-hidden="true">
+      <div className="hero-orb hero-orb--green" />
+      <div className="hero-orb hero-orb--mist" />
+      <div className="hero-stamp">Fresh picks daily</div>
+      <VisualTile product={primary} className="hero-fruit--primary" label={primary?.name || "Seasonal Picks"} />
+      <VisualTile product={secondary} className="hero-fruit--secondary" label={secondary?.name || "Market Goods"} />
+      <VisualTile product={tertiary} className="hero-fruit--tertiary" label={tertiary?.name || "Daily Finds"} />
+    </div>
+  );
+}
+
+function HeroCard({
+  selectedCategoryName,
+  productCount,
+  cartSubtotal,
+  categoryCount,
+  products,
+  hasActiveFilters,
+  onResetFilters,
+}) {
+  return (
+    <section className="market-hero">
+      <div className="market-hero__content">
+        <span className="section-kicker">Organic market theme</span>
+        <h1 className="market-hero__title">
+          Farm Fresh Organic <span>Finds.</span>
+        </h1>
+        <p className="market-hero__copy">
+          A brighter, produce-inspired storefront for everyday shopping.{" "}
+          {selectedCategoryName
+            ? `You're currently browsing ${selectedCategoryName.toLowerCase()}.`
+            : "Browse every aisle or jump straight to the essentials you need next."}
+        </p>
+        <div className="hero-actions">
+          <a href="#catalog-grid" className="btn btn-success">
+            Shop Collection
+          </a>
+          {hasActiveFilters ? (
+            <button type="button" className="btn btn-outline-success" onClick={onResetFilters}>
+              Clear Filters
+            </button>
+          ) : (
+            <a href="#category-grid" className="btn btn-outline-success">
+              Browse Aisles
+            </a>
+          )}
+        </div>
+        <div className="hero-metrics">
+          <div className="hero-metric">
+            <strong>{productCount}</strong>
+            <span>available picks</span>
           </div>
-          <div className="col-lg-4">
-            <div className="p-4 rounded-4 bg-white bg-opacity-75 border">
-              <div className="d-flex justify-content-between mb-2">
-                <span className="text-secondary">Visible products</span>
-                <strong>{productCount}</strong>
-              </div>
-              <div className="d-flex justify-content-between mb-2">
-                <span className="text-secondary">Category</span>
-                <strong>{selectedCategoryName || "All items"}</strong>
-              </div>
-              <div className="d-flex justify-content-between">
-                <span className="text-secondary">Cart subtotal</span>
-                <strong>{currencyFormatter.format(Number(cartSubtotal || 0))}</strong>
-              </div>
-            </div>
+          <div className="hero-metric">
+            <strong>{categoryCount}</strong>
+            <span>live categories</span>
           </div>
+          <div className="hero-metric">
+            <strong>{currencyFormatter.format(Number(cartSubtotal || 0))}</strong>
+            <span>cart subtotal</span>
+          </div>
+        </div>
+      </div>
+      <HeroVisual products={products} />
+    </section>
+  );
+}
+
+function PromoCard({ product, note, index }) {
+  return (
+    <article className={`promo-card promo-card--${["mint", "peach", "sage"][index % 3]}`}>
+      <div className="promo-card__copy">
+        <span className="promo-card__eyebrow">{note.label}</span>
+        <h2>{product?.category_name || note.title}</h2>
+        <p>{product ? truncateWords(product.description, 11) : note.copy}</p>
+        {product ? (
+          <a href={product.detail_url} className="promo-card__link">
+            See pick
+          </a>
+        ) : (
+          <span className="promo-card__link">Fresh style</span>
+        )}
+      </div>
+      <div className="promo-card__thumb">
+        {product?.image_url ? (
+          <img src={product.image_url} alt={product.name} className="promo-card__image" />
+        ) : (
+          <span className="promo-card__thumb-mark">{getInitials(product?.category_name || note.title)}</span>
+        )}
+      </div>
+    </article>
+  );
+}
+
+function PromoStrip({ products }) {
+  return (
+    <section className="promo-strip">
+      {promoNotes.map((note, index) => (
+        <PromoCard key={note.label} product={products[index]} note={note} index={index} />
+      ))}
+    </section>
+  );
+}
+
+function CategoryShelf({ categories, selectedCategory, setSelectedCategory }) {
+  const totalProducts = categories.reduce((total, category) => total + category.product_count, 0);
+
+  if (!categories.length) {
+    return null;
+  }
+
+  return (
+    <section className="category-section" id="category-grid">
+      <div className="section-heading">
+        <div>
+          <span className="section-kicker">Top categories</span>
+          <h2 className="section-title">Shop by aisle</h2>
+        </div>
+        <p className="section-copy">Quick category cards keep the catalog easy to scan on both desktop and mobile.</p>
+      </div>
+      <div className="category-shelf">
+        <button
+          type="button"
+          className={`category-card tone-green ${selectedCategory ? "" : "is-active"}`}
+          onClick={() => setSelectedCategory("")}
+        >
+          <span className="category-card__mark">ALL</span>
+          <strong>All products</strong>
+          <span className="category-card__count">{totalProducts} items</span>
+        </button>
+        {categories.map((category, index) => (
+          <button
+            key={category.id}
+            type="button"
+            className={`category-card tone-${["green", "mist", "orange", "sand"][index % 4]} ${
+              selectedCategory === category.slug ? "is-active" : ""
+            }`}
+            onClick={() => setSelectedCategory(category.slug)}
+          >
+            <span className="category-card__mark">{getInitials(category.name)}</span>
+            <strong>{category.name}</strong>
+            <span className="category-card__count">{category.product_count} items</span>
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function Filters({
+  categories,
+  selectedCategory,
+  setSelectedCategory,
+  searchInput,
+  setSearchInput,
+  productCount,
+}) {
+  return (
+    <section className="filter-panel">
+      <div className="filter-panel__copy">
+        <span className="section-kicker">Curated catalog</span>
+        <h2 className="section-title">Find what you need fast</h2>
+        <p className="section-copy">
+          Search the storefront, switch categories, and keep the shopping flow light even as the live data changes.
+        </p>
+      </div>
+      <div className="filter-panel__controls">
+        <label className="filter-control" htmlFor="storefront-search">
+          <span className="filter-control__label">Search products</span>
+          <input
+            id="storefront-search"
+            className="form-control form-control-lg"
+            placeholder="Try greens, snacks, coffee, tote..."
+            value={searchInput}
+            onChange={(event) => setSearchInput(event.target.value)}
+          />
+        </label>
+        <label className="filter-control" htmlFor="storefront-category">
+          <span className="filter-control__label">Filter by category</span>
+          <select
+            id="storefront-category"
+            className="form-select form-select-lg"
+            value={selectedCategory}
+            onChange={(event) => setSelectedCategory(event.target.value)}
+          >
+            <option value="">All categories</option>
+            {categories.map((category) => (
+              <option key={category.id} value={category.slug}>
+                {category.name} ({category.product_count})
+              </option>
+            ))}
+          </select>
+        </label>
+        <div className="filter-summary">
+          <span className="filter-summary__count">{productCount}</span>
+          <span className="filter-summary__label">{productCount === 1 ? "product visible" : "products visible"}</span>
         </div>
       </div>
     </section>
   );
 }
 
-function Filters({ categories, selectedCategory, setSelectedCategory, searchInput, setSearchInput }) {
+function BannerImage({ product, fallbackLabel }) {
   return (
-    <div className="card border-0 shadow-sm mb-4">
-      <div className="card-body p-4">
-        <div className="row g-3 align-items-end">
-          <div className="col-lg-7">
-            <label className="form-label fw-semibold" htmlFor="storefront-search">
-              Search products
-            </label>
-            <input
-              id="storefront-search"
-              className="form-control form-control-lg"
-              placeholder="Try coffee, tote, snacks, planner..."
-              value={searchInput}
-              onChange={(event) => setSearchInput(event.target.value)}
-            />
-          </div>
-          <div className="col-lg-5">
-            <label className="form-label fw-semibold" htmlFor="storefront-category">
-              Filter by category
-            </label>
-            <select
-              id="storefront-category"
-              className="form-select form-select-lg"
-              value={selectedCategory}
-              onChange={(event) => setSelectedCategory(event.target.value)}
-            >
-              <option value="">All categories</option>
-              {categories.map((category) => (
-                <option key={category.id} value={category.slug}>
-                  {category.name} ({category.product_count})
-                </option>
-              ))}
-            </select>
-          </div>
+    <div className="wide-banner__image">
+      {product?.image_url ? (
+        <img src={product.image_url} alt={product.name} className="wide-banner__photo" />
+      ) : (
+        <div className="wide-banner__fallback">
+          <span>{getInitials(fallbackLabel)}</span>
         </div>
-      </div>
+      )}
     </div>
   );
 }
 
-function ProductCard({ product, onAddToCart }) {
-  const averageRating = product.avg_rating ? Number(product.avg_rating).toFixed(1) : "0.0";
+function FeatureBanners({ products }) {
+  const primary = products[0];
+  const secondary = products[1] || products[0];
+
+  if (!primary && !secondary) {
+    return null;
+  }
+
+  return (
+    <section className="banner-grid">
+      <article className="wide-banner wide-banner--soft">
+        <div className="wide-banner__copy">
+          <span className="section-kicker">Fresh picks</span>
+          <h2>Build a brighter basket for the week</h2>
+          <p>From pantry staples to home comforts, the new layout makes every product feel cleaner and easier to spot.</p>
+          {primary ? (
+            <a href={primary.detail_url} className="wide-banner__link">
+              Explore {primary.category_name}
+            </a>
+          ) : null}
+        </div>
+        <BannerImage product={primary} fallbackLabel="Fresh Goods" />
+      </article>
+      <article className="wide-banner wide-banner--deep">
+        <div className="wide-banner__copy">
+          <span className="section-kicker section-kicker--light">Weekly highlight</span>
+          <h2>Restock without the visual clutter</h2>
+          <p>Rounded blocks, softer neutrals, and green accents keep the page warm while the catalog stays practical.</p>
+          {secondary ? (
+            <a href={secondary.detail_url} className="wide-banner__link wide-banner__link--light">
+              See {secondary.name}
+            </a>
+          ) : null}
+        </div>
+        <BannerImage product={secondary} fallbackLabel="Garden Picks" />
+      </article>
+    </section>
+  );
+}
+
+function ProductCard({ product, onAddToCart, index }) {
+  const hasRating = Boolean(product.avg_rating && Number(product.avg_rating) > 0);
 
   return (
     <article className="col">
-      <div className="card h-100 border-0 shadow-sm overflow-hidden product-card">
-        <a href={product.detail_url} className="text-decoration-none">
+      <div className={`product-card tone-${["green", "mist", "orange", "sand"][index % 4]}`}>
+        <a href={product.detail_url} className="product-card__media text-decoration-none">
           {product.image_url ? (
-            <img src={product.image_url} className="card-img-top product-image" alt={product.name} />
+            <img src={product.image_url} className="product-image" alt={product.name} />
           ) : (
             <div className="product-image product-image-placeholder d-flex align-items-center justify-content-center">
               No image yet
             </div>
           )}
         </a>
-        <div className="card-body d-flex flex-column">
-          <div className="d-flex justify-content-between align-items-start gap-3 mb-2">
-            <span className="badge rounded-pill text-bg-light border text-secondary">{product.category_name}</span>
-            <span className="small text-secondary">{averageRating} / 5</span>
+        <div className="product-card__body">
+          <div className="product-card__topline">
+            <span className="product-card__category">{product.category_name}</span>
+            <span className="product-card__rating">
+              {hasRating ? `${Number(product.avg_rating).toFixed(1)} / 5` : "Fresh drop"}
+            </span>
           </div>
-          <h2 className="h5">
-            <a href={product.detail_url} className="stretched-link text-decoration-none text-dark">
+          <h2 className="product-card__title">
+            <a href={product.detail_url} className="text-decoration-none text-reset">
               {product.name}
             </a>
           </h2>
-          <p className="text-secondary flex-grow-1 mb-3">{product.description}</p>
-          <div className="d-flex justify-content-between align-items-center mb-3">
-            <strong className="text-danger fs-5">{currencyFormatter.format(Number(product.price))}</strong>
-            <span className={`badge rounded-pill ${product.stock > 0 ? "text-bg-success" : "text-bg-secondary"}`}>
-              {product.stock > 0 ? `${product.stock} in stock` : "Out of stock"}
-            </span>
+          <p className="product-card__description">{truncateWords(product.description, 18)}</p>
+          <div className="product-card__bottom">
+            <div>
+              <strong className="product-card__price">{currencyFormatter.format(Number(product.price))}</strong>
+              <span className={`product-stock ${product.stock > 0 ? "is-available" : "is-sold-out"}`}>
+                {product.stock > 0 ? `${product.stock} in stock` : "Out of stock"}
+              </span>
+            </div>
+            <button
+              type="button"
+              className="btn btn-success product-card__button"
+              disabled={product.stock < 1}
+              onClick={() => onAddToCart(product.id)}
+            >
+              Add to cart
+            </button>
           </div>
-          <button
-            type="button"
-            className="btn btn-dark mt-auto"
-            disabled={product.stock < 1}
-            onClick={() => onAddToCart(product.id)}
-          >
-            Add to cart
-          </button>
         </div>
       </div>
     </article>
+  );
+}
+
+function LoadingCatalog() {
+  return (
+    <div className="row row-cols-1 row-cols-md-2 row-cols-xl-4 g-4">
+      {Array.from({ length: 4 }, (_, index) => (
+        <div className="col" key={`skeleton-${index}`}>
+          <div className="product-card product-card--skeleton">
+            <div className="product-skeleton product-skeleton__image" />
+            <div className="product-card__body">
+              <div className="product-skeleton product-skeleton__line product-skeleton__line--short" />
+              <div className="product-skeleton product-skeleton__line" />
+              <div className="product-skeleton product-skeleton__line" />
+              <div className="product-skeleton product-skeleton__line product-skeleton__line--tiny" />
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -193,8 +453,8 @@ function Pagination({ page, pages, onPageChange }) {
   }
 
   return (
-    <nav aria-label="Storefront pages" className="d-flex justify-content-center mt-4">
-      <ul className="pagination pagination-lg flex-wrap">
+    <nav aria-label="Storefront pages" className="pagination-wrap">
+      <ul className="pagination pagination-lg storefront-pagination flex-wrap">
         <li className={`page-item ${page === 1 ? "disabled" : ""}`}>
           <button className="page-link" type="button" onClick={() => onPageChange(page - 1)}>
             Previous
@@ -232,6 +492,15 @@ export function StorefrontApp({ config }) {
   const selectedCategoryName = useMemo(
     () => categories.find((category) => category.slug === selectedCategory)?.name || "",
     [categories, selectedCategory],
+  );
+  const heroProducts = useMemo(
+    () => catalog.results.filter((product) => product.image_url).slice(0, 3),
+    [catalog.results],
+  );
+  const promoProducts = useMemo(() => catalog.results.slice(0, 3), [catalog.results]);
+  const bannerProducts = useMemo(
+    () => catalog.results.filter((product) => product.image_url).slice(0, 2),
+    [catalog.results],
   );
 
   useEffect(() => {
@@ -318,6 +587,14 @@ export function StorefrontApp({ config }) {
     };
   }, [config.productsApi, deferredSearch, selectedCategory, page]);
 
+  function handleResetFilters() {
+    startTransition(() => {
+      setSearchInput("");
+      setSelectedCategory("");
+      setPage(1);
+    });
+  }
+
   async function handleAddToCart(productId) {
     setMessage("");
     setError("");
@@ -349,6 +626,16 @@ export function StorefrontApp({ config }) {
         selectedCategoryName={selectedCategoryName}
         productCount={catalog.count}
         cartSubtotal={cartSummary.subtotal}
+        categoryCount={categories.length}
+        products={heroProducts}
+        hasActiveFilters={Boolean(searchInput.trim() || selectedCategory)}
+        onResetFilters={handleResetFilters}
+      />
+      <PromoStrip products={promoProducts} />
+      <CategoryShelf
+        categories={categories}
+        selectedCategory={selectedCategory}
+        setSelectedCategory={setSelectedCategory}
       />
       <Filters
         categories={categories}
@@ -356,32 +643,44 @@ export function StorefrontApp({ config }) {
         setSelectedCategory={setSelectedCategory}
         searchInput={searchInput}
         setSearchInput={setSearchInput}
+        productCount={catalog.count}
       />
 
       {message ? <div className="alert alert-success shadow-sm">{message}</div> : null}
       {error ? <div className="alert alert-danger shadow-sm">{error}</div> : null}
 
-      {loading ? (
-        <div className="card border-0 shadow-sm">
-          <div className="card-body py-5 text-center text-secondary">Loading products...</div>
-        </div>
-      ) : catalog.results.length ? (
-        <>
-          <div className="row row-cols-1 row-cols-md-2 row-cols-xl-4 g-4">
-            {catalog.results.map((product) => (
-              <ProductCard key={product.id} product={product} onAddToCart={handleAddToCart} />
-            ))}
+      <FeatureBanners products={bannerProducts} />
+
+      <section className="catalog-section" id="catalog-grid">
+        <div className="section-heading">
+          <div>
+            <span className="section-kicker">Featured products</span>
+            <h2 className="section-title">Fresh picks from the catalog</h2>
           </div>
-          <Pagination page={catalog.page} pages={catalog.pages} onPageChange={setPage} />
-        </>
-      ) : (
-        <div className="card border-0 shadow-sm">
-          <div className="card-body py-5 text-center">
+          <p className="section-copy">
+            Browse real inventory in a softer grocery-inspired layout, with search, filters, and cart actions still
+            fully wired to Django.
+          </p>
+        </div>
+
+        {loading ? (
+          <LoadingCatalog />
+        ) : catalog.results.length ? (
+          <>
+            <div className="row row-cols-1 row-cols-md-2 row-cols-xl-4 g-4">
+              {catalog.results.map((product, index) => (
+                <ProductCard key={product.id} product={product} onAddToCart={handleAddToCart} index={index} />
+              ))}
+            </div>
+            <Pagination page={catalog.page} pages={catalog.pages} onPageChange={setPage} />
+          </>
+        ) : (
+          <div className="empty-state">
             <h2 className="h4 mb-3">No products matched your search.</h2>
-            <p className="text-secondary mb-0">Try a different keyword or switch back to all categories.</p>
+            <p className="mb-0">Try a different keyword or switch back to all categories for more fresh picks.</p>
           </div>
-        </div>
-      )}
+        )}
+      </section>
     </div>
   );
 }

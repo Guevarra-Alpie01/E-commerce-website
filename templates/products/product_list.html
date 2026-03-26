@@ -8,40 +8,53 @@
 <div id="storefront-root"></div>
 
 <noscript>
-    <section class="card border-0 shadow-sm mb-4 hero-gradient">
-        <div class="card-body p-4 p-lg-5">
-            <span class="badge text-bg-warning rounded-pill mb-3">JavaScript is off</span>
-            <h1 class="display-6 fw-bold">Browse {{ site_name }} the classic way</h1>
-            <p class="lead text-secondary mb-0">The React storefront is disabled, so here is the server-rendered catalog fallback.</p>
+    <section class="market-hero mb-4">
+        <div class="market-hero__content">
+            <span class="section-kicker">JavaScript is off</span>
+            <h1 class="market-hero__title">Fresh catalog, classic rendering.</h1>
+            <p class="market-hero__copy mb-0">The React storefront is disabled, so here is the server-rendered fallback in the same organic theme.</p>
         </div>
     </section>
+
+    <div class="section-heading mb-4">
+        <div>
+            <span class="section-kicker">Featured products</span>
+            <h2 class="section-title">Browse the catalog</h2>
+        </div>
+        <p class="section-copy">The fallback keeps the softer cards, brighter spacing, and product-first layout when JavaScript is unavailable.</p>
+    </div>
 
     <div class="row g-4">
         {% for product in page_obj %}
             <div class="col-md-6 col-xl-4">
-                <article class="card border-0 shadow-sm h-100">
-                    {% if product.image %}
-                        <img src="{{ product.image.url }}" class="card-img-top product-image" alt="{{ product.name }}">
-                    {% else %}
-                        <div class="product-image product-image-placeholder d-flex align-items-center justify-content-center">No image yet</div>
-                    {% endif %}
-                    <div class="card-body d-flex flex-column">
-                        <span class="badge text-bg-light border text-secondary align-self-start mb-2">{{ product.category.name }}</span>
-                        <h2 class="h5">{{ product.name }}</h2>
-                        <p class="text-secondary">{{ product.description|truncatewords:18 }}</p>
-                        <div class="d-flex justify-content-between align-items-center mt-auto">
-                            <strong class="text-danger">PHP {{ product.price }}</strong>
-                            <a class="btn btn-dark" href="{% url 'products:product_detail' product.slug %}">View</a>
+                <article class="product-card tone-green">
+                    <a href="{% url 'products:product_detail' product.slug %}" class="product-card__media text-decoration-none">
+                        {% if product.image %}
+                            <img src="{{ product.image.url }}" class="product-image" alt="{{ product.name }}">
+                        {% else %}
+                            <div class="product-image product-image-placeholder d-flex align-items-center justify-content-center">No image yet</div>
+                        {% endif %}
+                    </a>
+                    <div class="product-card__body">
+                        <div class="product-card__topline">
+                            <span class="product-card__category">{{ product.category.name }}</span>
+                            <span class="product-card__rating">Fresh pick</span>
+                        </div>
+                        <h2 class="product-card__title">{{ product.name }}</h2>
+                        <p class="product-card__description">{{ product.description|truncatewords:18 }}</p>
+                        <div class="product-card__bottom">
+                            <div>
+                                <strong class="product-card__price">PHP {{ product.price }}</strong>
+                            </div>
+                            <a class="btn btn-success product-card__button" href="{% url 'products:product_detail' product.slug %}">View</a>
                         </div>
                     </div>
                 </article>
             </div>
         {% empty %}
             <div class="col-12">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-body py-5 text-center">
-                        <h2 class="h4">No products found</h2>
-                    </div>
+                <div class="empty-state">
+                    <h2 class="h4">No products found</h2>
                 </div>
             </div>
         {% endfor %}
