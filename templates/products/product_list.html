@@ -5,43 +5,45 @@
 
 {% block content %}
 {% if not request.user.is_authenticated %}
-<section class="admin-panel admin-panel--narrow mb-4">
-    <div class="section-heading mb-4">
-        <div>
-            <span class="section-kicker">Unified login</span>
-            <h2 class="section-title">One sign-in for shoppers and admins</h2>
-        </div>
-        <p class="section-copy">Use the same login form here on the homepage. Admins go to the custom admin dashboard, while regular users go to their account pages.</p>
-    </div>
-    <form method="post" class="admin-form-stack">
-        {% csrf_token %}
-        <input type="hidden" name="login_submit" value="1">
-        {% if login_next %}
-            <input type="hidden" name="next" value="{{ login_next }}">
-        {% endif %}
-        {% if login_form.non_field_errors %}
-            <div class="alert alert-danger mb-0">
-                {% for error in login_form.non_field_errors %}
-                    <div>{{ error }}</div>
-                {% endfor %}
+<section class="auth-shell mb-4">
+    <div class="auth-panel auth-panel--wide">
+        <div class="auth-panel__body">
+            <div class="auth-panel__intro">
+                <span class="section-kicker">Welcome back</span>
+                <h1 class="auth-panel__title">Login to {{ site_name }}</h1>
+                <p class="auth-panel__copy">Sign in to shop, manage orders, and continue where you left off.</p>
             </div>
-        {% endif %}
-        <div class="row g-3">
-            {% for field in login_form %}
-                <div class="col-md-6">
-                    <label class="form-label fw-semibold" for="{{ field.id_for_label }}">{{ field.label }}</label>
-                    {{ field }}
-                    {% for error in field.errors %}
-                        <div class="text-danger small mt-1">{{ error }}</div>
+            <div class="auth-panel__form-wrap">
+                <form method="post" class="auth-form-grid">
+                    {% csrf_token %}
+                    <input type="hidden" name="login_submit" value="1">
+                    {% if login_next %}
+                        <input type="hidden" name="next" value="{{ login_next }}">
+                    {% endif %}
+                    {% if login_form.non_field_errors %}
+                        <div class="alert alert-danger mb-0 auth-form-grid__full">
+                            {% for error in login_form.non_field_errors %}
+                                <div>{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    {% for field in login_form %}
+                        <div class="auth-field auth-form-grid__full">
+                            <label class="form-label fw-semibold" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                            {{ field }}
+                            {% for error in field.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
+                            {% endfor %}
+                        </div>
                     {% endfor %}
-                </div>
-            {% endfor %}
+                    <div class="auth-actions auth-form-grid__full">
+                        <button type="submit" class="btn btn-dark btn-lg">Login</button>
+                        <a class="btn btn-outline-success btn-lg" href="{% url 'users:register' %}">Create account</a>
+                    </div>
+                </form>
+            </div>
         </div>
-        <div class="admin-actions justify-content-start mt-2">
-            <button type="submit" class="btn btn-success">Sign In</button>
-            <a class="btn btn-outline-success" href="{% url 'users:register' %}">Create Account</a>
-        </div>
-    </form>
+    </div>
 </section>
 {% endif %}
 

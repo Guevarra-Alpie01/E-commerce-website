@@ -4,16 +4,20 @@
 
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-lg-5">
-        <div class="card border-0 shadow-sm">
+    <div class="col-xl-7">
+        <div class="card border-0 shadow-sm auth-panel">
             <div class="card-body p-4 p-lg-5">
-                <span class="badge text-bg-warning rounded-pill mb-3">Welcome back</span>
-                <h1 class="h2 mb-3">Log in to {{ site_name }}</h1>
-                <p class="text-secondary mb-4">Sign in to place orders, review products, and manage your account.</p>
-                <form method="post" class="vstack gap-3">
+                <div class="row g-4 align-items-center">
+                    <div class="col-lg-5">
+                        <span class="badge text-bg-warning rounded-pill mb-3">Welcome back</span>
+                        <h1 class="display-6 fw-bold mb-3">Log in to {{ site_name }}</h1>
+                        <p class="text-secondary mb-0">Sign in to place orders, review products, and manage your account.</p>
+                    </div>
+                    <div class="col-lg-7">
+                        <form method="post" class="row g-3">
                     {% csrf_token %}
                     {% for field in form %}
-                        <div>
+                        <div class="col-12">
                             <label class="form-label fw-semibold" for="{{ field.id_for_label }}">{{ field.label }}</label>
                             {{ field }}
                             {% for error in field.errors %}
@@ -22,10 +26,17 @@
                         </div>
                     {% endfor %}
                     {% for error in form.non_field_errors %}
-                        <div class="alert alert-danger mb-0">{{ error }}</div>
+                        <div class="col-12">
+                            <div class="alert alert-danger mb-0">{{ error }}</div>
+                        </div>
                     {% endfor %}
-                    <button type="submit" class="btn btn-dark btn-lg">Login</button>
-                </form>
+                    <div class="col-12 d-flex flex-wrap gap-3">
+                        <button type="submit" class="btn btn-dark btn-lg">Login</button>
+                        <a class="btn btn-outline-success btn-lg" href="{% url 'users:register' %}">Create account</a>
+                    </div>
+                        </form>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

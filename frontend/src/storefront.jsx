@@ -120,7 +120,6 @@ function HeroVisual({ products }) {
     <div className="market-hero__visual" aria-hidden="true">
       <div className="hero-orb hero-orb--green" />
       <div className="hero-orb hero-orb--mist" />
-      <div className="hero-stamp">Fresh picks daily</div>
       <VisualTile product={primary} className="hero-fruit--primary" label={primary?.name || "Seasonal Picks"} />
       <VisualTile product={secondary} className="hero-fruit--secondary" label={secondary?.name || "Market Goods"} />
       <VisualTile product={tertiary} className="hero-fruit--tertiary" label={tertiary?.name || "Daily Finds"} />
