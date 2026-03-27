@@ -44,7 +44,7 @@ class ProductListAPIView(generics.ListAPIView):
                 avg_rating=Avg("reviews__rating"),
                 review_total=Count("reviews"),
             )
-            .order_by("name")
+            .order_by("-created_at", "-id")
         )
         query = self.request.query_params.get("search", "").strip()
         category_slug = self.request.query_params.get("category", "").strip()
@@ -73,7 +73,7 @@ class ProductDetailAPIView(generics.RetrieveAPIView):
             .select_related("category")
             .prefetch_related("reviews__user")
             .annotate(avg_rating=Avg("reviews__rating"), review_total=Count("reviews"))
-            .order_by("name")
+            .order_by("-created_at", "-id")
         )
 
 

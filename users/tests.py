@@ -149,6 +149,39 @@ class CustomAdminDashboardTests(TestCase):
         self.assertRedirects(response, reverse("admin_dashboard:product_list"))
         self.assertTrue(Product.objects.filter(name="Fresh Kale").exists())
 
+    def test_admin_created_product_appears_on_storefront_feed_first_page(self):
+        self.client.login(username="manager", password="secret12345")
+
+        for index in range(8):
+            Product.objects.create(
+                category=self.category,
+                name=f"Older Grocery {index}",
+                description="Existing storefront item",
+                price="40.00",
+                stock=6,
+            )
+
+        response = self.client.post(
+            reverse("admin_dashboard:product_create"),
+            {
+                "category": self.category.id,
+                "name": "Zesty Mango Jam",
+                "description": "Freshly added by admin",
+                "price": "135.00",
+                "stock": 9,
+                "is_active": "on",
+            },
+        )
+
+        self.assertRedirects(response, reverse("admin_dashboard:product_list"))
+
+        self.client.logout()
+        storefront_response = self.client.get(reverse("api:product_list"))
+        self.assertEqual(storefront_response.status_code, 200)
+        payload = storefront_response.json()
+
+        self.assertEqual(payload["results"][0]["name"], "Zesty Mango Jam")
+
     def test_staff_can_create_category_from_custom_admin(self):
         self.client.login(username="manager", password="secret12345")
 

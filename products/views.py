@@ -41,7 +41,7 @@ def product_list(request):
         Product.objects.filter(is_active=True)
         .select_related("category")
         .annotate(avg_rating=Avg("reviews__rating"), review_total=Count("reviews"))
-        .order_by("name")
+        .order_by("-created_at", "-id")
     )
     categories = Category.objects.all()
     selected_category = None
