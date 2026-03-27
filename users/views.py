@@ -24,12 +24,22 @@ def login_redirect_for(user, fallback="users:profile"):
 
 def login_entry(request):
     next_url = resolve_next_url(request)
-    target = "products:product_list"
     if request.user.is_authenticated:
         return redirect(next_url or login_redirect_for(request.user))
-    if next_url:
-        return redirect(f"{redirect(target).url}?next={next_url}")
-    return redirect(target)
+
+    if request.method == "POST":
+        form = UnifiedAuthenticationForm(request=request, data=request.POST)
+        if form.is_valid():
+            user = form.get_user()
+            login(request, user)
+            messages.success(request, f"Welcome back, {user.get_username()}.")
+            if next_url:
+                return redirect(next_url)
+            return redirect(login_redirect_for(user))
+    else:
+        form = UnifiedAuthenticationForm(request=request)
+
+    return render(request, "registration/login.html", {"form": form, "next": next_url})
 
 
 def logout_view(request):

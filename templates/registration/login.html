@@ -16,6 +16,9 @@
                     <div class="col-lg-7">
                         <form method="post" class="row g-3">
                     {% csrf_token %}
+                    {% if next %}
+                        <input type="hidden" name="next" value="{{ next }}">
+                    {% endif %}
                     {% for field in form %}
                         <div class="col-12">
                             <label class="form-label fw-semibold" for="{{ field.id_for_label }}">{{ field.label }}</label>

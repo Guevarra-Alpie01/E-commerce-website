@@ -107,11 +107,10 @@ class CustomAdminDashboardTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
 
-    def test_homepage_login_redirects_staff_to_admin_dashboard(self):
+    def test_login_page_redirects_staff_to_admin_dashboard(self):
         response = self.client.post(
-            reverse("products:product_list"),
+            reverse("login"),
             {
-                "login_submit": "1",
                 "username": "manager",
                 "password": "secret12345",
             },
@@ -119,17 +118,23 @@ class CustomAdminDashboardTests(TestCase):
 
         self.assertRedirects(response, reverse("admin_dashboard:index"))
 
-    def test_homepage_login_redirects_customer_to_profile(self):
+    def test_login_page_redirects_customer_to_profile(self):
         response = self.client.post(
-            reverse("products:product_list"),
+            reverse("login"),
             {
-                "login_submit": "1",
                 "username": "shopper",
                 "password": "secret12345",
             },
         )
 
         self.assertRedirects(response, reverse("users:profile"))
+
+    def test_shop_page_no_longer_renders_login_form(self):
+        response = self.client.get(reverse("products:product_list"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "Login to")
+        self.assertNotContains(response, 'name="login_submit"', html=False)
 
     def test_normal_user_is_redirected_from_admin_dashboard(self):
         self.client.login(username="shopper", password="secret12345")
