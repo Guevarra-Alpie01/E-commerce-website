@@ -100,6 +100,13 @@ class CustomAdminDashboardTests(TestCase):
 
         self.assertRedirects(response, reverse("admin_dashboard:index"))
 
+    def test_staff_user_can_access_public_storefront_api(self):
+        self.client.login(username="manager", password="secret12345")
+
+        response = self.client.get(reverse("api:product_list"))
+
+        self.assertEqual(response.status_code, 200)
+
     def test_homepage_login_redirects_staff_to_admin_dashboard(self):
         response = self.client.post(
             reverse("products:product_list"),

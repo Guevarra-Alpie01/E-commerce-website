@@ -35,11 +35,69 @@ function getCookie(name) {
 }
 
 async function readJson(response) {
-  const payload = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    throw new Error(payload.detail || "Something went wrong.");
+  const contentType = response.headers.get("content-type") || "";
+  let payload = null;
+
+  if (contentType.includes("application/json")) {
+    payload = await response.json().catch(() => {
+      throw new Error("The server returned invalid JSON.");
+    });
   }
+
+  if (!response.ok) {
+    throw new Error(payload?.detail || "Something went wrong.");
+  }
+
+  if (payload === null) {
+    throw new Error("The server returned an unexpected response.");
+  }
+
   return payload;
+}
+
+function normalizeCategories(payload) {
+  if (!Array.isArray(payload)) {
+    throw new Error("Unable to load categories right now.");
+  }
+
+  return payload;
+}
+
+function normalizeCatalog(payload) {
+  if (!payload || typeof payload !== "object" || !Array.isArray(payload.results)) {
+    throw new Error("Unable to load products right now.");
+  }
+
+  return {
+    ...payload,
+    count: Number(payload.count ?? payload.results.length) || 0,
+    page: Number(payload.page) || 1,
+    pages: Number(payload.pages) || 1,
+    results: payload.results,
+  };
+}
+
+function normalizeCartSummary(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("Unable to load cart details right now.");
+  }
+
+  return {
+    item_count: Number(payload.item_count) || 0,
+    subtotal: String(payload.subtotal ?? "0.00"),
+  };
+}
+
+function normalizeCartUpdate(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("Unable to update the cart right now.");
+  }
+
+  return {
+    detail: payload.detail || "Cart updated.",
+    item_count: Number(payload.item_count) || 0,
+    subtotal: String(payload.subtotal ?? "0.00"),
+  };
 }
 
 function buildProductsUrl(baseUrl, { search, category, page }) {
@@ -515,7 +573,7 @@ export function StorefrontApp({ config }) {
       const categoryResponse = await fetch(config.categoriesApi, {
         headers: { Accept: "application/json" },
       });
-      const categoryPayload = await readJson(categoryResponse);
+      const categoryPayload = normalizeCategories(await readJson(categoryResponse));
       if (!cancelled) {
         startTransition(() => {
           setCategories(categoryPayload);
@@ -527,7 +585,7 @@ export function StorefrontApp({ config }) {
       const cartResponse = await fetch(config.cartSummaryApi, {
         headers: { Accept: "application/json" },
       });
-      const cartPayload = await readJson(cartResponse);
+      const cartPayload = normalizeCartSummary(await readJson(cartResponse));
       if (!cancelled) {
         startTransition(() => {
           setCartSummary(cartPayload);
@@ -565,7 +623,7 @@ export function StorefrontApp({ config }) {
         }),
         { headers: { Accept: "application/json" } },
       );
-      const payload = await readJson(productResponse);
+      const payload = normalizeCatalog(await readJson(productResponse));
       if (!cancelled) {
         startTransition(() => {
           setCatalog(payload);
@@ -607,7 +665,7 @@ export function StorefrontApp({ config }) {
         },
         body: JSON.stringify({ product_id: productId, quantity: 1 }),
       });
-      const payload = await readJson(addResponse);
+      const payload = normalizeCartUpdate(await readJson(addResponse));
       setCartSummary({ item_count: payload.item_count, subtotal: payload.subtotal });
       setMessage(payload.detail);
       const cartBadge = document.getElementById("cart-count-badge");

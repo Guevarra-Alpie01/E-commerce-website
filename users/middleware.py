@@ -11,7 +11,7 @@ class AdminDashboardOnlyMiddleware:
     def __call__(self, request):
         if is_admin_user(getattr(request, "user", None)):
             path = request.path
-            allowed_prefixes = ["/admin-dashboard/"]
+            allowed_prefixes = ["/admin-dashboard/", "/api/"]
 
             if settings.STATIC_URL:
                 allowed_prefixes.append(settings.STATIC_URL)
