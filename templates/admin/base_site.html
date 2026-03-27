@@ -10,7 +10,9 @@
 
 {% block branding %}
     <div class="lj-admin-brand">
-        <div class="lj-admin-mark">LJ</div>
+        <div class="lj-admin-mark">
+            <img src="{% static 'frontend/images/lolajosielogo.svg' %}" alt="Lola Josie logo" class="lj-admin-logo">
+        </div>
         <div>
             <h1 id="site-name"><a href="{% url 'admin:index' %}">Lola Josie Tindahan Admin</a></h1>
             <p class="lj-admin-subtitle">Control room for products, orders, customers, and reviews</p>

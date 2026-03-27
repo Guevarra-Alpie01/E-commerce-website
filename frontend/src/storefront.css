@@ -169,15 +169,23 @@ select:not(.form-select) {
 
 .brand-mark {
   align-items: center;
-  background: linear-gradient(135deg, #ff9540, #18bf57);
+  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid rgba(93, 119, 99, 0.12);
   border-radius: 1.25rem;
-  color: #ffffff;
   display: inline-flex;
-  font-size: 1.05rem;
-  font-weight: 800;
   height: 3.2rem;
   justify-content: center;
-  min-width: 3.2rem;
+  min-width: 4.25rem;
+  overflow: hidden;
+  padding: 0.28rem 0.4rem;
+  box-shadow: 0 10px 18px rgba(31, 64, 38, 0.08);
+}
+
+.brand-logo {
+  display: block;
+  height: 100%;
+  object-fit: contain;
+  width: 100%;
 }
 
 .brand-name {
@@ -1077,6 +1085,10 @@ select:not(.form-select) {
 @media (max-width: 767.98px) {
   .site-main {
     padding-top: 1.5rem;
+  }
+
+  .brand-mark {
+    min-width: 3.75rem;
   }
 
   .market-hero,

@@ -12,7 +12,9 @@
     <div class="admin-layout">
         <aside class="admin-sidebar">
             <a class="admin-brand text-decoration-none" href="{% url 'admin_dashboard:index' %}">
-                <span class="admin-brand__mark">LJ</span>
+                <span class="admin-brand__mark">
+                    <img src="{% static 'frontend/images/lolajosielogo.svg' %}" alt="Lola Josie logo" class="admin-brand__logo">
+                </span>
                 <span>
                     <strong>Lola Josie Admin</strong>
                     <small>Custom e-commerce control room</small>
