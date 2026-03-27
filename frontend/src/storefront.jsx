@@ -23,6 +23,8 @@ const promoNotes = [
   },
 ];
 
+const heroSignals = ["Curated daily essentials", "Fast cart updates", "Secure checkout flow"];
+
 function getCookie(name) {
   const cookies = document.cookie ? document.cookie.split(";") : [];
   for (const cookie of cookies) {
@@ -197,16 +199,23 @@ function HeroCard({
   return (
     <section className="market-hero">
       <div className="market-hero__content">
-        <span className="section-kicker">Organic market theme</span>
+        <span className="section-kicker">Curated essentials</span>
         <h1 className="market-hero__title">
-          Farm Fresh Organic <span>Finds.</span>
+          Everyday shopping, <span>elevated.</span>
         </h1>
         <p className="market-hero__copy">
-          A brighter, produce-inspired storefront for everyday shopping.{" "}
+          A calmer, premium storefront built to make browsing feel fast, visual, and effortless.{" "}
           {selectedCategoryName
             ? `You're currently browsing ${selectedCategoryName.toLowerCase()}.`
             : "Browse every aisle or jump straight to the essentials you need next."}
         </p>
+        <div className="hero-signal-row" aria-label="Storefront highlights">
+          {heroSignals.map((signal) => (
+            <span key={signal} className="hero-signal-chip">
+              {signal}
+            </span>
+          ))}
+        </div>
         <div className="hero-actions">
           <a href="#catalog-grid" className="btn btn-success">
             Shop Collection
@@ -703,8 +712,16 @@ export function StorefrontApp({ config }) {
         productCount={catalog.count}
       />
 
-      {message ? <div className="alert alert-success shadow-sm">{message}</div> : null}
-      {error ? <div className="alert alert-danger shadow-sm">{error}</div> : null}
+      {message ? (
+        <div className="alert alert-success shadow-sm" role="status" aria-live="polite">
+          {message}
+        </div>
+      ) : null}
+      {error ? (
+        <div className="alert alert-danger shadow-sm" role="alert">
+          {error}
+        </div>
+      ) : null}
 
       <FeatureBanners products={bannerProducts} />
 
