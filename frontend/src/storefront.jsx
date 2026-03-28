@@ -23,7 +23,32 @@ const promoNotes = [
   },
 ];
 
-const heroSignals = ["Fresh fruit and veg", "Fast cart updates", "Secure checkout flow"];
+const heroFallbacks = [
+  {
+    id: "hero-fallback-mango",
+    name: "Sunrise mango",
+    category_name: "Fresh fruit",
+    detail_url: "#catalog-grid",
+  },
+  {
+    id: "hero-fallback-carrots",
+    name: "Bundle of carrots",
+    category_name: "Garden picks",
+    detail_url: "#catalog-grid",
+  },
+  {
+    id: "hero-fallback-lettuce",
+    name: "Head of lettuce",
+    category_name: "Leafy greens",
+    detail_url: "#catalog-grid",
+  },
+  {
+    id: "hero-fallback-apples",
+    name: "Crisp red apples",
+    category_name: "Daily staples",
+    detail_url: "#catalog-grid",
+  },
+];
 
 function getCookie(name) {
   const cookies = document.cookie ? document.cookie.split(";") : [];
@@ -158,124 +183,81 @@ function truncateWords(text, limit = 16) {
   return `${words.slice(0, limit).join(" ")}...`;
 }
 
-function HeroVisual({ products, selectedCategoryName, productCount }) {
-  const featuredProducts = products.filter(Boolean).slice(0, 3);
-  const primaryProduct = featuredProducts[0];
-  const spotlightTitle = selectedCategoryName || primaryProduct?.category_name || "Seasonal produce";
-  const spotlightCopy = selectedCategoryName
-    ? `Shop the best of ${selectedCategoryName.toLowerCase()} with softer imagery and a clearer path to checkout.`
-    : primaryProduct?.name
-      ? `${primaryProduct.name} leads the curated mix with warmer layers and a smoother path to checkout.`
-      : "A softer media blend keeps the storefront bright, clear, and easy to browse.";
-  const spotlightMetricCopy =
-    featuredProducts.length > 1 ? `${featuredProducts.length} curated picks in focus` : "fresh picks ready to browse";
+function HeroShelfCard({ product, index }) {
+  const priceLabel = product.price ? currencyFormatter.format(Number(product.price)) : "Fresh daily";
+  const title = product.name || "Fresh market pick";
+  const meta = product.category_name || "Curated essentials";
+  const href = product.detail_url || "#catalog-grid";
+
+  return (
+    <a href={href} className={`hero-shelf-card tone-${["green", "mist", "orange", "sand"][index % 4]}`}>
+      <div className="hero-shelf-card__media">
+        {product.image_url ? (
+          <img src={product.image_url} alt={title} className="hero-shelf-card__image" />
+        ) : (
+          <span className="hero-shelf-card__fallback">{getInitials(title)}</span>
+        )}
+      </div>
+      <div className="hero-shelf-card__body">
+        <strong className="hero-shelf-card__price">{priceLabel}</strong>
+        <span className="hero-shelf-card__title">{title}</span>
+        <span className="hero-shelf-card__meta">{meta}</span>
+      </div>
+    </a>
+  );
+}
+
+function HeroVisual({ products }) {
+  const featuredProducts = products.filter(Boolean).slice(0, 4);
+  const showcaseProducts = heroFallbacks.map((fallback, index) => featuredProducts[index] || fallback);
 
   return (
     <div className="market-hero__visual">
-      <div className="hero-visual-stage">
-        <div className="hero-visual-media" aria-hidden="true">
-          {primaryProduct?.image_url ? (
-            <img src={primaryProduct.image_url} alt="" className="hero-visual-image" />
-          ) : (
-            <span className="hero-visual-fallback">{getInitials(spotlightTitle)}</span>
-          )}
-        </div>
-        <div className="hero-visual-chip" aria-hidden="true">
-          <span className="hero-visual-chip__label">Featured now</span>
-          <strong className="hero-visual-chip__value">{primaryProduct?.name || spotlightTitle}</strong>
-        </div>
-        <div className="hero-spotlight">
-          <span className="hero-spotlight__eyebrow">Fresh spotlight</span>
-          <h2 className="hero-spotlight__title">{spotlightTitle}</h2>
-          <p className="hero-spotlight__copy">{spotlightCopy}</p>
-          <div className="hero-avatar-row" aria-hidden="true">
-            {featuredProducts.length ? (
-              featuredProducts.map((product) =>
-                product.image_url ? (
-                  <img key={product.id} src={product.image_url} alt="" className="hero-avatar" />
-                ) : (
-                  <span key={product.id} className="hero-avatar hero-avatar--fallback">
-                    {getInitials(product.name)}
-                  </span>
-                ),
-              )
-            ) : (
-              <span className="hero-avatar hero-avatar--fallback">FV</span>
-            )}
-          </div>
-          <div className="hero-spotlight__footer">
-            <div className="hero-spotlight__metric">
-              <span className="hero-spotlight__metric-label">Live catalog</span>
-              <strong className="hero-spotlight__metric-value">{productCount}</strong>
-            </div>
-            <span className="hero-spotlight__metric-copy">{spotlightMetricCopy}</span>
-          </div>
-        </div>
+      <div className="hero-shelf" aria-label="Featured hero products">
+        {showcaseProducts.map((product, index) => (
+          <HeroShelfCard key={product.id || `hero-card-${index}`} product={product} index={index} />
+        ))}
       </div>
     </div>
   );
 }
 
-function HeroCard({
-  selectedCategoryName,
-  productCount,
-  cartSubtotal,
-  categoryCount,
-  products,
-  hasActiveFilters,
-  onResetFilters,
-}) {
+function HeroCard({ selectedCategoryName, productCount, categoryCount, products, hasActiveFilters, onResetFilters }) {
+  const heroSummary = selectedCategoryName
+    ? `${productCount} curated picks across ${categoryCount} aisles, now focused on ${selectedCategoryName.toLowerCase()}.`
+    : `${productCount} curated picks across ${categoryCount} aisles, ready for faster everyday shopping.`;
+
   return (
     <section className="market-hero">
       <div className="market-hero__content">
-        <span className="section-kicker">Curated essentials</span>
-        <h1 className="market-hero__title">
-          Fresh produce, <span>beautifully curated.</span>
-        </h1>
-        <p className="market-hero__copy">
-          Discover crisp greens, pantry staples, and everyday favorites in a storefront designed for fast discovery,
-          clear pricing, and easy checkout.{" "}
-          {selectedCategoryName
-            ? `You're currently browsing ${selectedCategoryName.toLowerCase()}.`
-            : "Start with featured collections or browse aisle by aisle."}
-        </p>
-        <div className="hero-signal-row" aria-label="Storefront highlights">
-          {heroSignals.map((signal) => (
-            <span key={signal} className="hero-signal-chip">
-              {signal}
-            </span>
-          ))}
-        </div>
-        <div className="hero-actions">
-          <a href="#catalog-grid" className="btn btn-success">
-            Shop Collection
-          </a>
-          {hasActiveFilters ? (
-            <button type="button" className="btn btn-outline-success" onClick={onResetFilters}>
-              Clear Filters
-            </button>
-          ) : (
-            <a href="#category-grid" className="btn btn-outline-success">
-              Browse Aisles
+        <div className="market-hero__body">
+          <span className="section-kicker section-kicker--hero">Curated green market</span>
+          <h1 className="market-hero__title">
+            Your Curated <span>Green Market.</span>
+          </h1>
+          <p className="market-hero__copy">
+            Discover expertly selected fresh produce and everyday essentials in a warmer storefront built for clear
+            browsing, quick add-to-cart flow, and easy checkout.{" "}
+            {selectedCategoryName ? `You're currently browsing ${selectedCategoryName.toLowerCase()}.` : ""}
+          </p>
+          <div className="hero-actions">
+            <a href="#catalog-grid" className="btn btn-success">
+              Start Shopping
             </a>
-          )}
+            {hasActiveFilters ? (
+              <button type="button" className="btn btn-outline-success" onClick={onResetFilters}>
+                Clear Filters
+              </button>
+            ) : (
+              <a href="#category-grid" className="btn btn-outline-success">
+                Browse Aisles
+              </a>
+            )}
+          </div>
+          <p className="hero-summary">{heroSummary}</p>
         </div>
-        <div className="hero-metrics">
-          <div className="hero-metric">
-            <strong>{productCount}</strong>
-            <span>available picks</span>
-          </div>
-          <div className="hero-metric">
-            <strong>{categoryCount}</strong>
-            <span>live categories</span>
-          </div>
-          <div className="hero-metric">
-            <strong>{currencyFormatter.format(Number(cartSubtotal || 0))}</strong>
-            <span>cart subtotal</span>
-          </div>
-        </div>
+        <HeroVisual products={products} />
       </div>
-      <HeroVisual products={products} selectedCategoryName={selectedCategoryName} productCount={productCount} />
     </section>
   );
 }
@@ -590,7 +572,7 @@ export function StorefrontApp({ config }) {
     [categories, selectedCategory],
   );
   const heroProducts = useMemo(
-    () => catalog.results.filter((product) => product.image_url).slice(0, 3),
+    () => catalog.results.filter((product) => product.image_url).slice(0, 4),
     [catalog.results],
   );
   const promoProducts = useMemo(() => catalog.results.slice(0, 3), [catalog.results]);
@@ -721,7 +703,6 @@ export function StorefrontApp({ config }) {
       <HeroCard
         selectedCategoryName={selectedCategoryName}
         productCount={catalog.count}
-        cartSubtotal={cartSummary.subtotal}
         categoryCount={categories.length}
         products={heroProducts}
         hasActiveFilters={Boolean(searchInput.trim() || selectedCategory)}

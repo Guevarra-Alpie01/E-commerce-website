@@ -14,12 +14,18 @@
             <header class="site-navbar" id="site-header">
                 <div class="container site-navbar__inner">
                     <a class="site-brand brand-script" href="{% url 'products:product_list' %}" aria-label="{{ site_name }} home">
-                        <span class="brand-mark">
-                            <img src="{% static 'branding/logo.png' %}" alt="{{ site_name }} logo" class="brand-logo">
+                        <span class="brand-mark brand-mark--store" aria-hidden="true">
+                            <svg viewBox="0 0 48 48" class="brand-store-icon" fill="none">
+                                <path d="M9 20.5h30v15.75A4.75 4.75 0 0 1 34.25 41H13.75A4.75 4.75 0 0 1 9 36.25V20.5Z" fill="currentColor" opacity="0.18"></path>
+                                <path d="M12 20.5h24v15a2.5 2.5 0 0 1-2.5 2.5h-19A2.5 2.5 0 0 1 12 35.5v-15Z" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"></path>
+                                <path d="M8 20.5 11.25 12h25.5L40 20.5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path>
+                                <path d="M17.5 38V27.25h13V38" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"></path>
+                                <path d="M20 15.5h8" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"></path>
+                            </svg>
                         </span>
                         <span class="brand-copy">
                             <span class="brand-overline">Curated everyday essentials</span>
-                            <span class="d-block fw-bold brand-name">{{ site_name }}</span>
+                            <span class="d-block fw-bold brand-name">Lola Josie</span>
                         </span>
                     </a>
 
