@@ -223,10 +223,6 @@ function HeroVisual({ products }) {
 }
 
 function HeroCard({ selectedCategoryName, productCount, categoryCount, products, hasActiveFilters, onResetFilters }) {
-  const heroSummary = selectedCategoryName
-    ? `${productCount} curated picks across ${categoryCount} aisles, now focused on ${selectedCategoryName.toLowerCase()}.`
-    : `${productCount} curated picks across ${categoryCount} aisles, ready for faster everyday shopping.`;
-
   return (
     <section className="market-hero">
       <div className="market-hero__content">
@@ -244,17 +240,7 @@ function HeroCard({ selectedCategoryName, productCount, categoryCount, products,
             <a href="#catalog-grid" className="btn btn-success">
               Start Shopping
             </a>
-            {hasActiveFilters ? (
-              <button type="button" className="btn btn-outline-success" onClick={onResetFilters}>
-                Clear Filters
-              </button>
-            ) : (
-              <a href="#category-grid" className="btn btn-outline-success">
-                Browse Aisles
-              </a>
-            )}
           </div>
-          <p className="hero-summary">{heroSummary}</p>
         </div>
         <HeroVisual products={products} />
       </div>
@@ -721,10 +707,6 @@ export function StorefrontApp({ config }) {
             <span className="section-kicker">Featured products</span>
             <h2 className="section-title">Fresh picks from the catalog</h2>
           </div>
-          <p className="section-copy">
-            Browse real inventory in a softer grocery-inspired layout, with search, filters, and cart actions still
-            fully wired to Django.
-          </p>
         </div>
 
         {loading ? (
