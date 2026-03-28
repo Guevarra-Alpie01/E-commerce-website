@@ -159,38 +159,57 @@ function truncateWords(text, limit = 16) {
 }
 
 function HeroVisual({ products, selectedCategoryName, productCount }) {
-  const featuredProducts = products.filter(Boolean).slice(0, 2);
-  const spotlightTitle = selectedCategoryName || featuredProducts[0]?.category_name || "Seasonal produce";
+  const featuredProducts = products.filter(Boolean).slice(0, 3);
+  const primaryProduct = featuredProducts[0];
+  const spotlightTitle = selectedCategoryName || primaryProduct?.category_name || "Seasonal produce";
+  const spotlightCopy = selectedCategoryName
+    ? `Shop the best of ${selectedCategoryName.toLowerCase()} with softer imagery and a clearer path to checkout.`
+    : primaryProduct?.name
+      ? `${primaryProduct.name} leads the curated mix with warmer layers and a smoother path to checkout.`
+      : "A softer media blend keeps the storefront bright, clear, and easy to browse.";
+  const spotlightMetricCopy =
+    featuredProducts.length > 1 ? `${featuredProducts.length} curated picks in focus` : "fresh picks ready to browse";
 
   return (
     <div className="market-hero__visual">
-      <div className="hero-spotlight">
-        <span className="hero-spotlight__eyebrow">Fresh spotlight</span>
-        <h2 className="hero-spotlight__title">{spotlightTitle}</h2>
-        <p className="hero-spotlight__copy">
-          Sunlit produce textures, softer overlays, and a cleaner layout keep the hero vibrant while shopping stays easy.
-        </p>
-        <div className="hero-avatar-row" aria-hidden="true">
-          {featuredProducts.length ? (
-            featuredProducts.map((product) =>
-              product.image_url ? (
-                <img key={product.id} src={product.image_url} alt="" className="hero-avatar" />
-              ) : (
-                <span key={product.id} className="hero-avatar hero-avatar--fallback">
-                  {getInitials(product.name)}
-                </span>
-              ),
-            )
+      <div className="hero-visual-stage">
+        <div className="hero-visual-media" aria-hidden="true">
+          {primaryProduct?.image_url ? (
+            <img src={primaryProduct.image_url} alt="" className="hero-visual-image" />
           ) : (
-            <span className="hero-avatar hero-avatar--fallback">FV</span>
+            <span className="hero-visual-fallback">{getInitials(spotlightTitle)}</span>
           )}
         </div>
-        <div className="hero-spotlight__footer">
-          <div className="hero-spotlight__metric">
-            <span className="hero-spotlight__metric-label">Live catalog</span>
-            <strong className="hero-spotlight__metric-value">{productCount}</strong>
+        <div className="hero-visual-chip" aria-hidden="true">
+          <span className="hero-visual-chip__label">Featured now</span>
+          <strong className="hero-visual-chip__value">{primaryProduct?.name || spotlightTitle}</strong>
+        </div>
+        <div className="hero-spotlight">
+          <span className="hero-spotlight__eyebrow">Fresh spotlight</span>
+          <h2 className="hero-spotlight__title">{spotlightTitle}</h2>
+          <p className="hero-spotlight__copy">{spotlightCopy}</p>
+          <div className="hero-avatar-row" aria-hidden="true">
+            {featuredProducts.length ? (
+              featuredProducts.map((product) =>
+                product.image_url ? (
+                  <img key={product.id} src={product.image_url} alt="" className="hero-avatar" />
+                ) : (
+                  <span key={product.id} className="hero-avatar hero-avatar--fallback">
+                    {getInitials(product.name)}
+                  </span>
+                ),
+              )
+            ) : (
+              <span className="hero-avatar hero-avatar--fallback">FV</span>
+            )}
           </div>
-          <span className="hero-spotlight__metric-copy">fresh picks ready to browse</span>
+          <div className="hero-spotlight__footer">
+            <div className="hero-spotlight__metric">
+              <span className="hero-spotlight__metric-label">Live catalog</span>
+              <strong className="hero-spotlight__metric-value">{productCount}</strong>
+            </div>
+            <span className="hero-spotlight__metric-copy">{spotlightMetricCopy}</span>
+          </div>
         </div>
       </div>
     </div>
@@ -214,11 +233,11 @@ function HeroCard({
           Fresh produce, <span>beautifully curated.</span>
         </h1>
         <p className="market-hero__copy">
-          From crisp greens to daily staples, explore a vibrant storefront designed for fast discovery, clear pricing,
-          and effortless checkout.{" "}
+          Discover crisp greens, pantry staples, and everyday favorites in a storefront designed for fast discovery,
+          clear pricing, and easy checkout.{" "}
           {selectedCategoryName
             ? `You're currently browsing ${selectedCategoryName.toLowerCase()}.`
-            : "Browse every aisle or jump straight to the essentials you need next."}
+            : "Start with featured collections or browse aisle by aisle."}
         </p>
         <div className="hero-signal-row" aria-label="Storefront highlights">
           {heroSignals.map((signal) => (
