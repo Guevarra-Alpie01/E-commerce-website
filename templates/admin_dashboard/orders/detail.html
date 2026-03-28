@@ -2,7 +2,7 @@
 
 {% block title %}Order #{{ order.id }}{% endblock %}
 {% block admin_title %}Order #{{ order.id }}{% endblock %}
-{% block admin_intro %}Review customer details, ordered items, totals, payment info, and update status from this page.{% endblock %}
+{% block admin_intro %}Review customer details, rider assignment, QR verification, payment info, and update status from this page.{% endblock %}
 
 {% block admin_content %}
 <section class="admin-grid admin-grid--split">
@@ -13,7 +13,7 @@
                     <h2 class="h5 mb-1">Order Summary</h2>
                     <p class="text-secondary mb-0">{{ order.created_at|date:"M d, Y H:i" }}</p>
                 </div>
-                <span class="admin-badge admin-badge--neutral">{{ order.status }}</span>
+                <span class="admin-badge admin-badge--{{ order.status_theme }}">{{ order.status }}</span>
             </div>
 
             <div class="admin-summary-grid">
@@ -32,6 +32,20 @@
                 <article>
                     <span>Total</span>
                     <strong>PHP {{ order.subtotal }}</strong>
+                </article>
+                <article>
+                    <span>Assigned Rider</span>
+                    <strong>
+                        {% if order.assigned_rider %}
+                            {{ order.assigned_rider.get_full_name|default:order.assigned_rider.username }}
+                        {% else %}
+                            Pending assignment
+                        {% endif %}
+                    </strong>
+                </article>
+                <article>
+                    <span>Delivery Confirmed</span>
+                    <strong>{{ order.delivery_confirmed_at|date:"M d, Y H:i"|default:"Not yet" }}</strong>
                 </article>
                 <article class="admin-summary-grid__wide">
                     <span>Shipping Address</span>
@@ -77,15 +91,36 @@
             <div class="admin-panel__header">
                 <div>
                     <h2 class="h5 mb-1">Update Order Status</h2>
-                    <p class="text-secondary mb-0">Move this order through the fulfillment flow.</p>
+                    <p class="text-secondary mb-0">Assign the rider and move this order through the fulfillment flow.</p>
                 </div>
             </div>
             <form method="post" class="admin-form-stack">
                 {% csrf_token %}
+                <label class="form-label fw-semibold" for="{{ form.assigned_rider.id_for_label }}">{{ form.assigned_rider.label }}</label>
+                {{ form.assigned_rider }}
+                {% for error in form.assigned_rider.errors %}
+                    <div class="text-danger small">{{ error }}</div>
+                {% endfor %}
                 <label class="form-label fw-semibold" for="{{ form.status.id_for_label }}">{{ form.status.label }}</label>
                 {{ form.status }}
+                {% for error in form.status.errors %}
+                    <div class="text-danger small">{{ error }}</div>
+                {% endfor %}
                 <button type="submit" class="btn btn-success">Save Status</button>
             </form>
+        </div>
+
+        <div class="admin-panel">
+            <div class="admin-panel__header">
+                <div>
+                    <h2 class="h5 mb-1">Delivery QR</h2>
+                    <p class="text-secondary mb-0">This is the QR the customer shows to the rider on delivery.</p>
+                </div>
+            </div>
+            <div class="admin-qr-card">
+                <div class="admin-qr-card__code">{{ delivery_qr_svg|safe }}</div>
+                <input type="text" class="form-control" value="{{ delivery_confirmation_url }}" readonly>
+            </div>
         </div>
 
         <div class="admin-panel">
@@ -100,6 +135,14 @@
                 <li><strong>Status:</strong> {{ payment.status }}</li>
                 <li><strong>Method:</strong> {{ payment.payment_method }}</li>
                 <li><strong>Amount:</strong> PHP {{ payment.amount }}</li>
+                <li>
+                    <strong>Verified by:</strong>
+                    {% if order.delivery_scanned_by %}
+                        {{ order.delivery_scanned_by.get_full_name|default:order.delivery_scanned_by.username }}
+                    {% else %}
+                        Not yet scanned
+                    {% endif %}
+                </li>
                 <li><strong>Notes:</strong> {{ payment.notes|default:"No notes" }}</li>
             </ul>
         </div>

@@ -55,10 +55,13 @@
                 {% if recent_orders %}
                     <div class="vstack gap-3">
                         {% for order in recent_orders %}
-                            <div class="border rounded-4 p-3 d-flex justify-content-between align-items-center gap-3">
+                            <div class="border rounded-4 p-3 d-flex justify-content-between align-items-center gap-3 flex-wrap">
                                 <div>
                                     <div class="fw-semibold">Order #{{ order.id }}</div>
                                     <div class="text-secondary small">{{ order.created_at|date:"M d, Y H:i" }}</div>
+                                    {% if order.assigned_rider %}
+                                        <div class="small text-secondary mt-1">Rider: {{ order.assigned_rider.get_full_name|default:order.assigned_rider.username }}</div>
+                                    {% endif %}
                                 </div>
                                 <div class="text-end">
                                     <div class="badge text-bg-light border mb-2">{{ order.status }}</div>

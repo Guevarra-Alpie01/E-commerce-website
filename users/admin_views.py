@@ -2,23 +2,27 @@ from django.contrib import messages
 from django.contrib.auth import logout
 from django.contrib.auth.models import User
 from django.core.paginator import Paginator
+from django.db import transaction
 from django.db.models import Count, DecimalField, Q, Sum
 from django.db.models.functions import Coalesce
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 
+from orders.delivery import build_delivery_confirmation_url, build_delivery_qr_svg, ensure_payment_completed, mark_order_delivered
 from orders.models import Order, Payment
 from products.models import Category, Product
 from reviews.models import Review
 
-from .admin_access import admin_required, is_admin_user
+from .admin_access import admin_required
 from .admin_forms import (
     AdminCategoryForm,
     AdminOrderStatusForm,
     AdminPaymentStatusForm,
     AdminProductForm,
+    AdminRiderCreationForm,
     AdminUserForm,
+    AdminUserProfileForm,
 )
 from .models import UserProfile
 
@@ -54,6 +58,16 @@ def ensure_payment(order):
     return payment
 
 
+def describe_user_role(user_obj):
+    if user_obj.is_superuser:
+        return "Superuser"
+    if user_obj.is_staff:
+        return "Staff"
+    if getattr(user_obj, "profile", None) and user_obj.profile.role == UserProfile.Role.RIDER:
+        return "Rider"
+    return "Customer"
+
+
 def admin_login(request):
     next_url = resolve_next_url(request)
     target = redirect("login").url
@@ -80,7 +94,11 @@ def dashboard(request):
             total=Coalesce(Sum("subtotal"), 0, output_field=DecimalField(max_digits=10, decimal_places=2))
         )["total"],
     }
-    recent_orders = Order.objects.select_related("user").prefetch_related("items").order_by("-created_at")[:8]
+    recent_orders = (
+        Order.objects.select_related("user", "assigned_rider")
+        .prefetch_related("items")
+        .order_by("-created_at")[:8]
+    )
     low_stock_products = Product.objects.select_related("category").filter(stock__lte=5).order_by("stock", "name")[:6]
     pending_payments = Payment.objects.select_related("order", "user").filter(status=Payment.Status.PENDING)[:5]
     latest_reviews = Review.objects.select_related("product", "user")[:5]
@@ -101,34 +119,85 @@ def dashboard(request):
 @admin_required
 def user_list(request):
     query = request.GET.get("q", "").strip()
-    users = User.objects.select_related("profile").annotate(order_count=Count("orders", distinct=True)).order_by("-date_joined")
+    role_filter = request.GET.get("role", "").strip()
+    users = (
+        User.objects.select_related("profile")
+        .annotate(order_count=Count("orders", distinct=True), assigned_order_count=Count("assigned_orders", distinct=True))
+        .order_by("-date_joined")
+    )
 
     if query:
-        users = users.filter(Q(username__icontains=query) | Q(email__icontains=query))
+        users = users.filter(
+            Q(username__icontains=query)
+            | Q(email__icontains=query)
+            | Q(first_name__icontains=query)
+            | Q(last_name__icontains=query)
+            | Q(profile__phone__icontains=query)
+        )
+
+    if role_filter == "rider":
+        users = users.filter(profile__role=UserProfile.Role.RIDER, is_staff=False, is_superuser=False)
+    elif role_filter == "customer":
+        users = users.filter(profile__role=UserProfile.Role.CUSTOMER, is_staff=False, is_superuser=False)
+    elif role_filter == "staff":
+        users = users.filter(Q(is_staff=True) | Q(is_superuser=True))
 
     page_obj = paginate_queryset(request, users, per_page=12)
     return render(
         request,
         "admin_dashboard/users/list.html",
-        {"page_obj": page_obj, "query": query, "querystring": querystring_without_page(request), "section": "users"},
+        {
+            "page_obj": page_obj,
+            "query": query,
+            "role_filter": role_filter,
+            "querystring": querystring_without_page(request),
+            "section": "users",
+        },
+    )
+
+
+@admin_required
+def rider_create(request):
+    if request.method == "POST":
+        form = AdminRiderCreationForm(request.POST)
+        if form.is_valid():
+            rider = form.save()
+            messages.success(request, f"Rider account for {rider.username} has been created.")
+            return redirect("admin_dashboard:user_detail", user_id=rider.id)
+    else:
+        form = AdminRiderCreationForm()
+
+    return render(
+        request,
+        "admin_dashboard/users/rider_form.html",
+        {
+            "form": form,
+            "title": "Create rider account",
+            "submit_label": "Create rider",
+            "section": "users",
+        },
     )
 
 
 @admin_required
 def user_detail(request, user_id):
-    user_obj = get_object_or_404(User, pk=user_id)
+    user_obj = get_object_or_404(User.objects.select_related("profile"), pk=user_id)
     profile, _ = UserProfile.objects.get_or_create(user=user_obj)
 
     if request.method == "POST":
         form = AdminUserForm(request.POST, instance=user_obj)
-        if form.is_valid():
+        profile_form = AdminUserProfileForm(request.POST, instance=profile)
+        if form.is_valid() and profile_form.is_valid():
             form.save()
+            profile_form.save()
             messages.success(request, f"{user_obj.username} has been updated.")
             return redirect("admin_dashboard:user_detail", user_id=user_obj.id)
     else:
         form = AdminUserForm(instance=user_obj)
+        profile_form = AdminUserProfileForm(instance=profile)
 
-    user_orders = user_obj.orders.prefetch_related("items").order_by("-created_at")
+    user_orders = user_obj.orders.select_related("assigned_rider").prefetch_related("items").order_by("-created_at")
+    assigned_orders = user_obj.assigned_orders.select_related("user").prefetch_related("items").order_by("-created_at")[:10]
     user_reviews = user_obj.reviews.select_related("product").order_by("-created_at")[:8]
     return render(
         request,
@@ -137,8 +206,11 @@ def user_detail(request, user_id):
             "managed_user": user_obj,
             "profile": profile,
             "form": form,
+            "profile_form": profile_form,
             "user_orders": user_orders,
+            "assigned_orders": assigned_orders,
             "user_reviews": user_reviews,
+            "account_role_label": describe_user_role(user_obj),
             "section": "users",
         },
     )
@@ -352,13 +424,23 @@ def category_delete(request, category_id):
 def order_list(request):
     status_filter = request.GET.get("status", "").strip()
     query = request.GET.get("q", "").strip()
-    orders = Order.objects.select_related("user", "payment").prefetch_related("items").order_by("-created_at")
+    orders = (
+        Order.objects.select_related("user", "payment", "assigned_rider")
+        .prefetch_related("items")
+        .order_by("-created_at")
+    )
 
     if status_filter:
         orders = orders.filter(status=status_filter)
 
     if query:
-        query_filter = Q(user__username__icontains=query) | Q(full_name__icontains=query)
+        query_filter = (
+            Q(user__username__icontains=query)
+            | Q(full_name__icontains=query)
+            | Q(assigned_rider__username__icontains=query)
+            | Q(assigned_rider__first_name__icontains=query)
+            | Q(assigned_rider__last_name__icontains=query)
+        )
         if query.isdigit():
             query_filter |= Q(pk=int(query))
         orders = orders.filter(query_filter)
@@ -381,24 +463,48 @@ def order_list(request):
 @admin_required
 def order_detail(request, order_id):
     order = get_object_or_404(
-        Order.objects.select_related("user").prefetch_related("items__product"),
+        Order.objects.select_related("user", "assigned_rider", "delivery_scanned_by").prefetch_related("items__product"),
         pk=order_id,
     )
+    previous_status = order.status
     payment = ensure_payment(order)
 
     if request.method == "POST":
         form = AdminOrderStatusForm(request.POST, instance=order)
         if form.is_valid():
-            form.save()
-            if order.status == Order.Status.DELIVERED and payment.status != Payment.Status.COMPLETED:
-                payment.status = Payment.Status.COMPLETED
-                payment.notes = (payment.notes + "\n" if payment.notes else "") + "Marked completed when order was delivered."
-                payment.save(update_fields=["status", "notes", "updated_at"])
+            selected_status = form.cleaned_data["status"]
+            assigned_rider = form.cleaned_data["assigned_rider"]
+            order.assigned_rider = assigned_rider
+
+            if assigned_rider and selected_status in {
+                Order.Status.PENDING,
+                Order.Status.PROCESSING,
+                Order.Status.SHIPPED,
+            }:
+                selected_status = Order.Status.ASSIGNED
+
+            with transaction.atomic():
+                if selected_status == Order.Status.DELIVERED:
+                    order.status = previous_status
+                    order.save(update_fields=["assigned_rider", "updated_at"])
+                    if previous_status != Order.Status.DELIVERED:
+                        mark_order_delivered(
+                            order,
+                            request.user,
+                            "Marked completed when order was delivered from the admin dashboard.",
+                        )
+                else:
+                    order.status = selected_status
+                    order.save(update_fields=["assigned_rider", "status", "updated_at"])
+                    if payment.status != Payment.Status.COMPLETED and order.status == Order.Status.DELIVERED:
+                        ensure_payment_completed(order, "Marked completed when order was delivered from the admin dashboard.")
+
             messages.success(request, f"Order #{order.pk} status updated to {order.status}.")
             return redirect("admin_dashboard:order_detail", order_id=order.pk)
     else:
         form = AdminOrderStatusForm(instance=order)
 
+    delivery_confirmation_url = build_delivery_confirmation_url(request, order)
     return render(
         request,
         "admin_dashboard/orders/detail.html",
@@ -406,6 +512,8 @@ def order_detail(request, order_id):
             "order": order,
             "payment": payment,
             "form": form,
+            "delivery_confirmation_url": delivery_confirmation_url,
+            "delivery_qr_svg": build_delivery_qr_svg(delivery_confirmation_url),
             "section": "orders",
         },
     )

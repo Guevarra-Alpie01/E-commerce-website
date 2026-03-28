@@ -2,6 +2,7 @@ from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
 
+from orders.delivery import build_delivery_signed_token
 from orders.models import Order, Payment
 from products.models import Category, Product
 from reviews.models import Review
@@ -54,6 +55,15 @@ class CustomAdminDashboardTests(TestCase):
             password="secret12345",
             email="shopper@example.com",
         )
+        self.rider_user = User.objects.create_user(
+            username="rider-one",
+            password="secret12345",
+            email="rider@example.com",
+            first_name="Ria",
+            last_name="Driver",
+        )
+        self.rider_user.profile.role = UserProfile.Role.RIDER
+        self.rider_user.profile.save()
         self.category = Category.objects.create(name="Groceries")
         self.product = Product.objects.create(
             category=self.category,
@@ -129,6 +139,17 @@ class CustomAdminDashboardTests(TestCase):
 
         self.assertRedirects(response, reverse("users:profile"))
 
+    def test_login_page_redirects_rider_to_dashboard(self):
+        response = self.client.post(
+            reverse("login"),
+            {
+                "username": "rider-one",
+                "password": "secret12345",
+            },
+        )
+
+        self.assertRedirects(response, reverse("users:rider_dashboard"))
+
     def test_shop_page_no_longer_renders_login_form(self):
         response = self.client.get(reverse("products:product_list"))
 
@@ -160,6 +181,32 @@ class CustomAdminDashboardTests(TestCase):
 
         self.assertRedirects(response, reverse("admin_dashboard:product_list"))
         self.assertTrue(Product.objects.filter(name="Fresh Kale").exists())
+
+    def test_staff_can_create_rider_from_custom_admin(self):
+        self.client.login(username="manager", password="secret12345")
+
+        response = self.client.post(
+            reverse("admin_dashboard:rider_create"),
+            {
+                "first_name": "Paolo",
+                "last_name": "Courier",
+                "username": "rider-two",
+                "email": "rider-two@example.com",
+                "password1": "secretpass12345",
+                "password2": "secretpass12345",
+                "phone": "09170000011",
+                "address": "North Hub",
+                "city": "Quezon City",
+                "postal_code": "1100",
+                "delivery_zone": "Metro North",
+                "vehicle_details": "Motorbike",
+                "is_active": "on",
+            },
+        )
+
+        created_rider = User.objects.get(username="rider-two")
+        self.assertRedirects(response, reverse("admin_dashboard:user_detail", args=[created_rider.id]))
+        self.assertEqual(created_rider.profile.role, UserProfile.Role.RIDER)
 
     def test_admin_created_product_appears_on_storefront_feed_first_page(self):
         self.client.login(username="manager", password="secret12345")
@@ -231,6 +278,24 @@ class CustomAdminDashboardTests(TestCase):
         self.payment.refresh_from_db()
         self.assertEqual(self.order.status, Order.Status.DELIVERED)
         self.assertEqual(self.payment.status, Payment.Status.COMPLETED)
+
+    def test_wrong_rider_cannot_confirm_delivery_qr(self):
+        self.order.assigned_rider = self.rider_user
+        self.order.save(update_fields=["assigned_rider"])
+        other_rider = User.objects.create_user(username="other-rider", password="secret12345")
+        other_rider.profile.role = UserProfile.Role.RIDER
+        other_rider.profile.save()
+        signed_token = build_delivery_signed_token(self.order)
+
+        self.client.login(username="other-rider", password="secret12345")
+        response = self.client.post(
+            reverse("orders:rider_delivery_confirm", args=[signed_token]),
+            {"signed_token": signed_token},
+        )
+
+        self.assertRedirects(response, reverse("users:rider_dashboard"))
+        self.order.refresh_from_db()
+        self.assertEqual(self.order.status, Order.Status.PENDING)
 
     def test_staff_can_delete_review_from_custom_admin(self):
         self.client.login(username="manager", password="secret12345")

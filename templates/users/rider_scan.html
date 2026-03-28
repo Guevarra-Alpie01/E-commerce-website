@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block title %}Scan Delivery QR | {{ site_name }}{% endblock %}
+
+{% block content %}
+<section class="scanner-shell">
+    <div class="scanner-shell__intro">
+        <span class="section-kicker section-kicker--light">Delivery Scanner</span>
+        <h1 class="scanner-shell__title">Scan the customer’s QR and finish the handoff.</h1>
+        <p class="scanner-shell__copy">This page is designed for mobile riders. Use the rear camera for the fastest Shopee-style delivery confirmation flow.</p>
+    </div>
+    <div class="scanner-shell__panel">
+        <div class="scanner-frame">
+            <video id="delivery-scanner-video" playsinline muted class="scanner-frame__video"></video>
+            <div class="scanner-frame__overlay" aria-hidden="true"></div>
+        </div>
+        <div id="scanner-status" class="scanner-status scanner-status--neutral">Camera is ready when you are.</div>
+        <div class="scanner-actions">
+            <button type="button" id="start-scanner" class="btn btn-light btn-lg">Start camera</button>
+            <button type="button" id="stop-scanner" class="btn btn-outline-light btn-lg">Stop</button>
+        </div>
+    </div>
+</section>
+
+<section class="card border-0 shadow-sm mt-4">
+    <div class="card-body p-4">
+        <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap mb-3">
+            <div>
+                <h2 class="h4 mb-1">Manual fallback</h2>
+                <p class="text-secondary mb-0">If the browser blocks camera scanning, paste the secure delivery link or signed token here.</p>
+            </div>
+        </div>
+        <form id="scanner-manual-form" class="scanner-manual-form">
+            <input type="text" id="manual-scan-value" class="form-control form-control-lg" placeholder="Paste the delivery URL or token">
+            <button type="submit" class="btn btn-dark btn-lg">Continue</button>
+        </form>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(() => {
+    const video = document.getElementById("delivery-scanner-video");
+    const status = document.getElementById("scanner-status");
+    const startButton = document.getElementById("start-scanner");
+    const stopButton = document.getElementById("stop-scanner");
+    const manualForm = document.getElementById("scanner-manual-form");
+    const manualInput = document.getElementById("manual-scan-value");
+    let stream = null;
+    let active = false;
+    let detector = null;
+
+    const setStatus = (message, tone = "neutral") => {
+        status.textContent = message;
+        status.className = `scanner-status scanner-status--${tone}`;
+    };
+
+    const stopStream = () => {
+        active = false;
+        if (stream) {
+            stream.getTracks().forEach((track) => track.stop());
+            stream = null;
+        }
+        video.srcObject = null;
+    };
+
+    const buildTargetUrl = (value) => {
+        const trimmed = value.trim();
+        if (!trimmed) {
+            return null;
+        }
+        if (trimmed.includes("/orders/rider/deliver/")) {
+            const url = new URL(trimmed, window.location.origin);
+            if (url.origin !== window.location.origin) {
+                return null;
+            }
+            return url.toString();
+        }
+        return `${window.location.origin}/orders/rider/deliver/${encodeURIComponent(trimmed)}/`;
+    };
+
+    const handleScan = (value) => {
+        const targetUrl = buildTargetUrl(value);
+        if (!targetUrl) {
+            setStatus("This QR code does not belong to this store.", "danger");
+            return;
+        }
+        stopStream();
+        setStatus("QR detected. Opening secure delivery confirmation...", "success");
+        window.location.href = targetUrl;
+    };
+
+    const scanLoop = async () => {
+        if (!active || !detector) {
+            return;
+        }
+        try {
+            const codes = await detector.detect(video);
+            if (codes.length > 0 && codes[0].rawValue) {
+                handleScan(codes[0].rawValue);
+                return;
+            }
+        } catch (error) {
+            setStatus("The browser could not read the QR code. Try manual paste if this continues.", "warning");
+        }
+        if (active) {
+            requestAnimationFrame(scanLoop);
+        }
+    };
+
+    startButton.addEventListener("click", async () => {
+        if (!("BarcodeDetector" in window)) {
+            setStatus("Barcode scanning is not supported on this browser. Use the manual fallback below.", "warning");
+            return;
+        }
+
+        try {
+            detector = new BarcodeDetector({ formats: ["qr_code"] });
+            stream = await navigator.mediaDevices.getUserMedia({
+                video: {
+                    facingMode: { ideal: "environment" },
+                },
+                audio: false,
+            });
+            video.srcObject = stream;
+            await video.play();
+            active = true;
+            setStatus("Camera live. Point it at the customer's QR code.", "success");
+            requestAnimationFrame(scanLoop);
+        } catch (error) {
+            setStatus("Camera access was blocked. Use the manual fallback or allow camera permission and try again.", "danger");
+        }
+    });
+
+    stopButton.addEventListener("click", () => {
+        stopStream();
+        setStatus("Scanner stopped. You can start the camera again anytime.", "neutral");
+    });
+
+    manualForm.addEventListener("submit", (event) => {
+        event.preventDefault();
+        if (!manualInput.value.trim()) {
+            setStatus("Paste a delivery link or token first.", "warning");
+            return;
+        }
+        handleScan(manualInput.value);
+    });
+
+    window.addEventListener("beforeunload", stopStream);
+})();
+</script>
+{% endblock %}

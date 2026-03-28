@@ -14,13 +14,14 @@
 <div class="card border-0 shadow-sm">
     <div class="card-body p-4">
         {% if orders %}
-            <div class="table-responsive">
+            <div class="d-none d-md-block table-responsive">
                 <table class="table align-middle">
                     <thead>
                         <tr>
                             <th>Order</th>
                             <th>Date</th>
                             <th>Status</th>
+                            <th>Rider</th>
                             <th>Total</th>
                             <th></th>
                         </tr>
@@ -31,12 +32,47 @@
                                 <td>#{{ order.id }}</td>
                                 <td>{{ order.created_at|date:"M d, Y H:i" }}</td>
                                 <td><span class="badge text-bg-light border">{{ order.status }}</span></td>
+                                <td>
+                                    {% if order.assigned_rider %}
+                                        {{ order.assigned_rider.get_full_name|default:order.assigned_rider.username }}
+                                    {% else %}
+                                        Pending assignment
+                                    {% endif %}
+                                </td>
                                 <td>PHP {{ order.subtotal }}</td>
                                 <td><a class="btn btn-sm btn-outline-dark" href="{% url 'orders:order_detail' order.id %}">View</a></td>
                             </tr>
                         {% endfor %}
                     </tbody>
                 </table>
+            </div>
+            <div class="d-grid gap-3 d-md-none">
+                {% for order in orders %}
+                    <article class="order-mobile-card">
+                        <div class="d-flex justify-content-between gap-3 align-items-start">
+                            <div>
+                                <div class="fw-semibold">Order #{{ order.id }}</div>
+                                <div class="text-secondary small">{{ order.created_at|date:"M d, Y H:i" }}</div>
+                            </div>
+                            <span class="badge text-bg-light border">{{ order.status }}</span>
+                        </div>
+                        <div class="order-mobile-card__meta">
+                            <span>Total</span>
+                            <strong>PHP {{ order.subtotal }}</strong>
+                        </div>
+                        <div class="order-mobile-card__meta">
+                            <span>Rider</span>
+                            <strong>
+                                {% if order.assigned_rider %}
+                                    {{ order.assigned_rider.get_full_name|default:order.assigned_rider.username }}
+                                {% else %}
+                                    Pending assignment
+                                {% endif %}
+                            </strong>
+                        </div>
+                        <a class="btn btn-dark w-100" href="{% url 'orders:order_detail' order.id %}">Open order</a>
+                    </article>
+                {% endfor %}
             </div>
         {% else %}
             <p class="text-secondary mb-0">You have not placed any orders yet.</p>

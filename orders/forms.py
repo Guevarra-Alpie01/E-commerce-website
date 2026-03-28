@@ -13,3 +13,7 @@ class CheckoutForm(forms.ModelForm):
             "phone": forms.TextInput(attrs={"class": "form-control"}),
             "payment_method": forms.Select(attrs={"class": "form-select"}),
         }
+
+
+class RiderDeliveryConfirmationForm(forms.Form):
+    signed_token = forms.CharField(widget=forms.HiddenInput())

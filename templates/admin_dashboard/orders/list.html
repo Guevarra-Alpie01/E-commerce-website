@@ -2,13 +2,13 @@
 
 {% block title %}Manage Orders{% endblock %}
 {% block admin_title %}Order Management{% endblock %}
-{% block admin_intro %}Filter and inspect orders, then update each order’s status from detail view.{% endblock %}
+{% block admin_intro %}Filter, assign riders, and inspect each order’s delivery state from one operational queue.{% endblock %}
 
 {% block admin_content %}
 <section class="admin-panel">
     <form method="get" class="admin-toolbar admin-toolbar--filters">
         <div class="admin-toolbar__search">
-            <input type="text" name="q" class="form-control" value="{{ query }}" placeholder="Search by order id, full name, or username">
+            <input type="text" name="q" class="form-control" value="{{ query }}" placeholder="Search by order id, customer, or rider">
         </div>
         <select name="status" class="form-select">
             <option value="">All statuses</option>
@@ -25,6 +25,7 @@
                 <tr>
                     <th>Order</th>
                     <th>Customer</th>
+                    <th>Rider</th>
                     <th>Status</th>
                     <th>Items</th>
                     <th>Total</th>
@@ -40,7 +41,14 @@
                             <strong>{{ order.full_name }}</strong><br>
                             <small class="text-secondary">{{ order.user.username }}</small>
                         </td>
-                        <td><span class="admin-badge admin-badge--neutral">{{ order.status }}</span></td>
+                        <td>
+                            {% if order.assigned_rider %}
+                                {{ order.assigned_rider.get_full_name|default:order.assigned_rider.username }}
+                            {% else %}
+                                Pending
+                            {% endif %}
+                        </td>
+                        <td><span class="admin-badge admin-badge--{{ order.status_theme }}">{{ order.status }}</span></td>
                         <td>{{ order.item_count }}</td>
                         <td>PHP {{ order.subtotal }}</td>
                         <td>{{ order.payment.status }}</td>
@@ -50,7 +58,7 @@
                     </tr>
                 {% empty %}
                     <tr>
-                        <td colspan="7" class="text-center text-secondary py-4">No orders matched the current filters.</td>
+                        <td colspan="8" class="text-center text-secondary py-4">No orders matched the current filters.</td>
                     </tr>
                 {% endfor %}
             </tbody>

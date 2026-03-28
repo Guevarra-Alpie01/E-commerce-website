@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}Rider Dashboard | {{ site_name }}{% endblock %}
+
+{% block content %}
+<section class="rider-hero">
+    <div class="rider-hero__copy">
+        <span class="section-kicker section-kicker--light">Rider Console</span>
+        <h1 class="rider-hero__title">Assigned deliveries, optimized for the road.</h1>
+        <p class="rider-hero__text">Check assigned orders, mark trips as active, and scan the customer’s QR when the parcel reaches the door.</p>
+    </div>
+    <div class="rider-hero__actions">
+        <a class="btn btn-light btn-lg" href="{% url 'users:rider_scan' %}">Open scanner</a>
+        <a class="btn btn-outline-light btn-lg" href="#assigned-orders">View assigned orders</a>
+    </div>
+</section>
+
+<section class="rider-stats-grid mt-4">
+    <article class="rider-stat-card">
+        <span>Assigned</span>
+        <strong>{{ stats.assigned }}</strong>
+    </article>
+    <article class="rider-stat-card">
+        <span>Out for delivery</span>
+        <strong>{{ stats.out_for_delivery }}</strong>
+    </article>
+    <article class="rider-stat-card">
+        <span>Delivered today</span>
+        <strong>{{ stats.delivered_today }}</strong>
+    </article>
+</section>
+
+<section class="mt-4" id="assigned-orders">
+    <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap mb-3">
+        <div>
+            <h2 class="h3 mb-1">Assigned orders</h2>
+            <p class="text-secondary mb-0">Use the mobile scanner once the customer receives the package.</p>
+        </div>
+        <a class="btn btn-dark" href="{% url 'users:rider_scan' %}">Scan delivery QR</a>
+    </div>
+    {% if active_orders %}
+        <div class="rider-orders-grid">
+            {% for order in active_orders %}
+                <article class="rider-order-card">
+                    <div class="d-flex justify-content-between gap-3 align-items-start">
+                        <div>
+                            <span class="section-kicker">Order #{{ order.id }}</span>
+                            <h3 class="h5 mt-3 mb-1">{{ order.full_name }}</h3>
+                            <p class="text-secondary small mb-0">{{ order.created_at|date:"M d, Y H:i" }}</p>
+                        </div>
+                        <span class="status-pill status-pill--{{ order.status_theme }}">{{ order.status }}</span>
+                    </div>
+                    <div class="rider-order-card__meta">
+                        <span>Phone</span>
+                        <strong>{{ order.phone }}</strong>
+                    </div>
+                    <div class="rider-order-card__meta">
+                        <span>Address</span>
+                        <strong>{{ order.address|truncatechars:110 }}</strong>
+                    </div>
+                    <div class="rider-order-card__meta">
+                        <span>Total</span>
+                        <strong>PHP {{ order.subtotal }}</strong>
+                    </div>
+                    <div class="rider-order-card__actions">
+                        <a class="btn btn-dark" href="{% url 'users:rider_order_detail' order.id %}">Open order</a>
+                        {% if order.status != 'Out for Delivery' and order.status != 'Delivered' %}
+                            <form method="post" action="{% url 'users:rider_order_start' order.id %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-success">Start trip</button>
+                            </form>
+                        {% endif %}
+                    </div>
+                </article>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <h2 class="h4 mb-2">No assigned deliveries right now</h2>
+            <p class="mb-0">New dispatches will appear here once an admin assigns them to your rider account.</p>
+        </div>
+    {% endif %}
+</section>
+
+<section class="mt-4">
+    <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap mb-3">
+        <div>
+            <h2 class="h3 mb-1">Recent completed deliveries</h2>
+            <p class="text-secondary mb-0">A quick log of the latest orders you verified through QR.</p>
+        </div>
+    </div>
+    {% if recent_deliveries %}
+        <div class="rider-recent-list">
+            {% for order in recent_deliveries %}
+                <article class="rider-recent-card">
+                    <div>
+                        <strong>Order #{{ order.id }}</strong>
+                        <div class="text-secondary small">{{ order.full_name }} · {{ order.delivery_confirmed_at|date:"M d, Y H:i" }}</div>
+                    </div>
+                    <span class="status-pill status-pill--success">Delivered</span>
+                </article>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="text-secondary mb-0">No completed deliveries yet.</p>
+    {% endif %}
+</section>
+{% endblock %}

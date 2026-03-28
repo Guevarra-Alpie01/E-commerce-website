@@ -1,0 +1,19 @@
+.admin-qr-card {
+  display: grid;
+  gap: 1rem;
+}
+
+.admin-qr-card__code {
+  align-items: center;
+  background: #f6f9f6;
+  border-radius: 1.5rem;
+  display: flex;
+  justify-content: center;
+  padding: 1.25rem;
+}
+
+.admin-qr-card__code svg {
+  height: auto;
+  max-width: 100%;
+  width: min(240px, 100%);
+}

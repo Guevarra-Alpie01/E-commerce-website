@@ -2,15 +2,22 @@
 
 {% block title %}Manage Users{% endblock %}
 {% block admin_title %}User Management{% endblock %}
-{% block admin_intro %}Search accounts, check order activity, and activate or deactivate store users.{% endblock %}
+{% block admin_intro %}Search accounts, manage rider assignments, and activate or deactivate store users from one place.{% endblock %}
 
 {% block admin_content %}
 <section class="admin-panel">
-    <form method="get" class="admin-toolbar">
+    <form method="get" class="admin-toolbar admin-toolbar--filters">
         <div class="admin-toolbar__search">
-            <input type="text" name="q" class="form-control" value="{{ query }}" placeholder="Search by username or email">
+            <input type="text" name="q" class="form-control" value="{{ query }}" placeholder="Search by username, email, or phone">
         </div>
+        <select name="role" class="form-select">
+            <option value="">All account types</option>
+            <option value="customer" {% if role_filter == 'customer' %}selected{% endif %}>Customers</option>
+            <option value="rider" {% if role_filter == 'rider' %}selected{% endif %}>Riders</option>
+            <option value="staff" {% if role_filter == 'staff' %}selected{% endif %}>Staff</option>
+        </select>
         <button type="submit" class="btn btn-success">Search</button>
+        <a class="btn btn-outline-success" href="{% url 'admin_dashboard:rider_create' %}">Add rider</a>
     </form>
 
     <div class="table-responsive">
@@ -33,7 +40,12 @@
                             <small class="text-secondary">{{ user.get_full_name|default:"No full name" }}</small>
                         </td>
                         <td>{{ user.email|default:"No email" }}</td>
-                        <td>{{ user.order_count }}</td>
+                        <td>
+                            {{ user.order_count }}
+                            {% if user.assigned_order_count %}
+                                <div class="small text-secondary">{{ user.assigned_order_count }} assigned</div>
+                            {% endif %}
+                        </td>
                         <td>
                             {% if user.is_active %}
                                 <span class="admin-badge admin-badge--success">Active</span>
@@ -46,6 +58,8 @@
                                 Superuser
                             {% elif user.is_staff %}
                                 Staff
+                            {% elif user.profile.role == 'rider' %}
+                                Rider
                             {% else %}
                                 Customer
                             {% endif %}

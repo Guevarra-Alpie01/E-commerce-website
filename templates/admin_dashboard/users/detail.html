@@ -2,7 +2,7 @@
 
 {% block title %}User Details{% endblock %}
 {% block admin_title %}User Details{% endblock %}
-{% block admin_intro %}Review account information, admin permissions, and that user’s order history in one place.{% endblock %}
+{% block admin_intro %}Review account information, rider fields, admin permissions, and order history in one place.{% endblock %}
 
 {% block admin_content %}
 <section class="admin-grid admin-grid--split">
@@ -26,7 +26,7 @@
             </article>
             <article>
                 <span>Role</span>
-                <strong>{% if managed_user.is_superuser %}Superuser{% elif managed_user.is_staff %}Staff{% else %}Customer{% endif %}</strong>
+                <strong>{{ account_role_label }}</strong>
             </article>
             <article>
                 <span>Phone</span>
@@ -45,6 +45,12 @@
             <div class="row g-3">
                 {% for field in form %}
                     <div class="col-md-6">
+                        <label class="form-label fw-semibold" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                    </div>
+                {% endfor %}
+                {% for field in profile_form %}
+                    <div class="col-md-6 {% if field.name == 'address' %}col-12{% endif %}">
                         <label class="form-label fw-semibold" for="{{ field.id_for_label }}">{{ field.label }}</label>
                         {{ field }}
                     </div>
@@ -78,6 +84,30 @@
                 {% endfor %}
             </ul>
         </div>
+
+        {% if profile.role == 'rider' %}
+            <div class="admin-panel">
+                <div class="admin-panel__header">
+                    <div>
+                        <h2 class="h5 mb-1">Assigned Deliveries</h2>
+                        <p class="text-secondary mb-0">Orders currently handled by this rider.</p>
+                    </div>
+                </div>
+                <ul class="admin-list">
+                    {% for order in assigned_orders %}
+                        <li>
+                            <div>
+                                <strong><a href="{% url 'admin_dashboard:order_detail' order.id %}">Order #{{ order.id }}</a></strong>
+                                <small>{{ order.status }} · {{ order.full_name }}</small>
+                            </div>
+                            <span class="admin-badge admin-badge--neutral">PHP {{ order.subtotal }}</span>
+                        </li>
+                    {% empty %}
+                        <li class="text-secondary">This rider has no assigned orders right now.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
 
         <div class="admin-panel">
             <div class="admin-panel__header">
