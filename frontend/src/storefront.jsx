@@ -575,11 +575,6 @@ export function StorefrontApp({ config }) {
     () => catalog.results.filter((product) => product.image_url).slice(0, 4),
     [catalog.results],
   );
-  const promoProducts = useMemo(() => catalog.results.slice(0, 3), [catalog.results]);
-  const bannerProducts = useMemo(
-    () => catalog.results.filter((product) => product.image_url).slice(0, 2),
-    [catalog.results],
-  );
 
   useEffect(() => {
     if (page !== 1) {
@@ -708,19 +703,10 @@ export function StorefrontApp({ config }) {
         hasActiveFilters={Boolean(searchInput.trim() || selectedCategory)}
         onResetFilters={handleResetFilters}
       />
-      <PromoStrip products={promoProducts} />
       <CategoryShelf
         categories={categories}
         selectedCategory={selectedCategory}
         setSelectedCategory={setSelectedCategory}
-      />
-      <Filters
-        categories={categories}
-        selectedCategory={selectedCategory}
-        setSelectedCategory={setSelectedCategory}
-        searchInput={searchInput}
-        setSearchInput={setSearchInput}
-        productCount={catalog.count}
       />
 
       {message ? (
@@ -728,13 +714,6 @@ export function StorefrontApp({ config }) {
           {message}
         </div>
       ) : null}
-      {error ? (
-        <div className="alert alert-danger shadow-sm" role="alert">
-          {error}
-        </div>
-      ) : null}
-
-      <FeatureBanners products={bannerProducts} />
 
       <section className="catalog-section" id="catalog-grid">
         <div className="section-heading">
