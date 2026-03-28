@@ -23,7 +23,7 @@ const promoNotes = [
   },
 ];
 
-const heroSignals = ["Curated daily essentials", "Fast cart updates", "Secure checkout flow"];
+const heroSignals = ["Fresh fruit and veg", "Fast cart updates", "Secure checkout flow"];
 
 function getCookie(name) {
   const cookies = document.cookie ? document.cookie.split(";") : [];
@@ -158,31 +158,41 @@ function truncateWords(text, limit = 16) {
   return `${words.slice(0, limit).join(" ")}...`;
 }
 
-function VisualTile({ product, className, label }) {
+function HeroVisual({ products, selectedCategoryName, productCount }) {
+  const featuredProducts = products.filter(Boolean).slice(0, 2);
+  const spotlightTitle = selectedCategoryName || featuredProducts[0]?.category_name || "Seasonal produce";
+
   return (
-    <div className={`hero-fruit ${className}`}>
-      {product?.image_url ? (
-        <img src={product.image_url} alt={product.name} className="hero-fruit__image" />
-      ) : (
-        <div className="hero-fruit__fallback">
-          <span className="hero-fruit__fallback-mark">{getInitials(label)}</span>
-          <span className="hero-fruit__fallback-label">{label}</span>
+    <div className="market-hero__visual">
+      <div className="hero-spotlight">
+        <span className="hero-spotlight__eyebrow">Fresh spotlight</span>
+        <h2 className="hero-spotlight__title">{spotlightTitle}</h2>
+        <p className="hero-spotlight__copy">
+          Sunlit produce textures, softer overlays, and a cleaner layout keep the hero vibrant while shopping stays easy.
+        </p>
+        <div className="hero-avatar-row" aria-hidden="true">
+          {featuredProducts.length ? (
+            featuredProducts.map((product) =>
+              product.image_url ? (
+                <img key={product.id} src={product.image_url} alt="" className="hero-avatar" />
+              ) : (
+                <span key={product.id} className="hero-avatar hero-avatar--fallback">
+                  {getInitials(product.name)}
+                </span>
+              ),
+            )
+          ) : (
+            <span className="hero-avatar hero-avatar--fallback">FV</span>
+          )}
         </div>
-      )}
-    </div>
-  );
-}
-
-function HeroVisual({ products }) {
-  const [primary, secondary, tertiary] = products;
-
-  return (
-    <div className="market-hero__visual" aria-hidden="true">
-      <div className="hero-orb hero-orb--green" />
-      <div className="hero-orb hero-orb--mist" />
-      <VisualTile product={primary} className="hero-fruit--primary" label={primary?.name || "Seasonal Picks"} />
-      <VisualTile product={secondary} className="hero-fruit--secondary" label={secondary?.name || "Market Goods"} />
-      <VisualTile product={tertiary} className="hero-fruit--tertiary" label={tertiary?.name || "Daily Finds"} />
+        <div className="hero-spotlight__footer">
+          <div className="hero-spotlight__metric">
+            <span className="hero-spotlight__metric-label">Live catalog</span>
+            <strong className="hero-spotlight__metric-value">{productCount}</strong>
+          </div>
+          <span className="hero-spotlight__metric-copy">fresh picks ready to browse</span>
+        </div>
+      </div>
     </div>
   );
 }
@@ -201,10 +211,11 @@ function HeroCard({
       <div className="market-hero__content">
         <span className="section-kicker">Curated essentials</span>
         <h1 className="market-hero__title">
-          Everyday shopping, <span>elevated.</span>
+          Fresh produce, <span>beautifully curated.</span>
         </h1>
         <p className="market-hero__copy">
-          A calmer, premium storefront built to make browsing feel fast, visual, and effortless.{" "}
+          From crisp greens to daily staples, explore a vibrant storefront designed for fast discovery, clear pricing,
+          and effortless checkout.{" "}
           {selectedCategoryName
             ? `You're currently browsing ${selectedCategoryName.toLowerCase()}.`
             : "Browse every aisle or jump straight to the essentials you need next."}
@@ -245,7 +256,7 @@ function HeroCard({
           </div>
         </div>
       </div>
-      <HeroVisual products={products} />
+      <HeroVisual products={products} selectedCategoryName={selectedCategoryName} productCount={productCount} />
     </section>
   );
 }
